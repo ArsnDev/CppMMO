@@ -25,11 +25,16 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
     src/Utils/Logger.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
 )
 
 # =========================[ 컴파일러 경고 옵션 ]=========================
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_options(/W4)
+    add_compile_definitions(
+        _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
+        _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
+    )
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -61,10 +66,51 @@ FetchContent_MakeAvailable(spdlog_src)
 # =========================[ 외부 라이브러리: redis-plus-plus ]=========================
 find_package(redis++ CONFIG REQUIRED)
 
+# =========================[ 외부 라이브러리: FlatBuffers ]==========================
+FetchContent_Declare(
+    flatbuffers_src
+    GIT_REPOSITORY https://github.com/google/flatbuffers.git
+    GIT_TAG v24.3.25
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(flatbuffers_src)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
+
+FetchContent_GetProperties(flatbuffers_src)
+
+# FlatBuffers 헤더 출력 디렉토리 미리 생성
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/src/Common")
+
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
+    COMMAND $<TARGET_FILE:flatc>
+            --cpp
+            --gen-object-api
+            -o "${CMAKE_CURRENT_BINARY_DIR}/src/Common/"
+            -I "${CMAKE_SOURCE_DIR}/src/Common/"
+            "${CMAKE_SOURCE_DIR}/src/Common/protocol.fbs"
+    DEPENDS ${CMAKE_SOURCE_DIR}/src/Common/protocol.fbs
+            flatc
+    COMMENT "Generating FlatBuffers C++ code from protocol.fbs"
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/src/Common
+)
+
+add_custom_target(generate_protocol_fbs
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
+)
+
+add_dependencies(generate_protocol_fbs flatc)
+add_dependencies(${PROJECT_NAME} generate_protocol_fbs)
+
 # =========================[ 라이브러리 링크 ]=========================
 target_link_libraries(${PROJECT_NAME} PRIVATE
     spdlog
     redis++::redis++
+    flatbuffers
     Boost::system
     Boost::thread
     Boost::program_options
