@@ -22,6 +22,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # =========================[ 실행 파일 및 소스 파일 ]=========================
 add_executable(${PROJECT_NAME})
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    target_precompile_headers(${PROJECT_NAME} PRIVATE
+        "${CMAKE_SOURCE_DIR}/src/pch.h"
+    )
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/pch.cpp
+    )
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # 이 프로젝트는 일단 MSVC만 지원함 필요하다면 아래 주석을 해지할것.
+    # target_precompile_headers(${PROJECT_NAME} PRIVATE pch.h)
+    # target_sources(${PROJECT_NAME} PRIVATE src/pch.cpp)
+endif()
+
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
     src/Utils/Logger.cpp
@@ -79,7 +92,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 
 FetchContent_GetProperties(flatbuffers_src)
 
-# FlatBuffers 헤더 출력 디렉토리 미리 생성
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/src/Common")
 
 add_custom_command(
@@ -105,6 +117,12 @@ add_custom_target(generate_protocol_fbs
 
 add_dependencies(generate_protocol_fbs flatc)
 add_dependencies(${PROJECT_NAME} generate_protocol_fbs)
+
+# =========================[ 헤더 파일 포함 경로 ]=========================
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/Utils
+)
 
 # =========================[ 라이브러리 링크 ]=========================
 target_link_libraries(${PROJECT_NAME} PRIVATE
