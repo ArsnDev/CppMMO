@@ -81,3 +81,13 @@ external/
 .#* # Emacs lock files
 .DS_Store           # macOS specific files
 Thumbs.db           # Windows thumbnail cache
+
+# -------------------------------------------------------------
+# 7. Application-Specific Log Files
+# -------------------------------------------------------------
+logs/
+
+# -------------------------------------------------------------
+# 8. Doxygen Output Files
+# -------------------------------------------------------------
+docs/

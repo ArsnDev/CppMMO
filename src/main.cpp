@@ -1,11 +1,6 @@
 ﻿// src/main.cpp
-#include "pch.h" // <--- 모든 소스 파일의 가장 첫 줄에 포함되어야 합니다!
-
-// pch.h에 포함되지 않은 (또는 PCH에 넣기 어려운) 헤더들
-// FlatBuffers generated 헤더는 빌드 시 생성되므로 여기에 직접 포함합니다.
+#include "pch.h"
 #include "protocol_generated.h"
-
-// FlatBuffers 네임스페이스
 using namespace CppMMO::Protocol;
 
 int main() {

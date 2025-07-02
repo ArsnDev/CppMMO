@@ -38,12 +38,15 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
     src/Utils/Logger.cpp
+    src/Network/TcpServer.cpp
+    src/Network/Session.cpp
+    src/Network/PacketManager.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
 )
 
 # =========================[ 컴파일러 경고 옵션 ]=========================
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_compile_options(/W4)
+    add_compile_options(/W4 /utf-8)
     add_compile_definitions(
         _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
         _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
@@ -122,6 +125,7 @@ add_dependencies(${PROJECT_NAME} generate_protocol_fbs)
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/Utils
+    ${CMAKE_SOURCE_DIR}/src/Network
 )
 
 # =========================[ 라이브러리 링크 ]=========================
@@ -134,3 +138,26 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Boost::program_options
     Boost::filesystem
 )
+
+# =========================[ Doxygen 문서화 ]=========================
+find_package(Doxygen QUIET)
+
+if(DOXYGEN_FOUND)
+    message(STATUS "Doxygen found. Generating documentation.")
+
+    add_custom_command(
+        OUTPUT ${CMAKE_SOURCE_DIR}/docs/doxygen/html/index.html
+        COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+
+    add_custom_target(doc ALL
+        DEPENDS ${CMAKE_SOURCE_DIR}/docs/doxygen/html/index.html
+        COMMENT "Builds the Doxygen documentation"
+    )
+    
+else()
+    message(WARNING "Doxygen not found. API documentation will not be generated. Please install Doxygen and Graphviz.")
+endif()
