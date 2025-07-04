@@ -1,22 +1,23 @@
 #pragma once
 #include "pch.h"
 #include "IPacketManager.h"
-#include <span>
-#include <cstddef>
 
 namespace CppMMO
 {
     namespace Network
     {
-        class ISession;
-
         class PacketManager : public IPacketManager
         {
         public:
             PacketManager() = default;
             virtual ~PacketManager() = default;
+            
+            virtual void RegisterHandler(PacketId id, PacketHandler handler) override;
+            virtual void UnregisterHandler(PacketId id) noexcept override;
+            virtual void HandlePacket(std::shared_ptr<ISession> session, const Protocol::UnifiedPacket* packet) override;
 
-            virtual void HandlePacket(std::shared_ptr<ISession> session, std::span<const std::byte> data) override;
+        private:
+            std::unordered_map<PacketId, PacketHandler> m_handlers;
         };
     }
 }

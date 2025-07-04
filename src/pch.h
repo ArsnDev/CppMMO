@@ -4,10 +4,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <array>
+#include <deque>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <cstdint>
+#include <atomic>
+#include <chrono>
 
 // ========================[ Boost 라이브러리 ]========================
 #include <boost/system/error_code.hpp>
@@ -16,6 +21,11 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio/ts/internet.hpp>
+
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/detached.hpp>
+#include <boost/asio/use_awaitable.hpp> 
+#include <boost/asio/steady_timer.hpp>
 
 // ========================[ Spdlog 라이브러리 ]========================
 #include "Utils/Logger.h"
