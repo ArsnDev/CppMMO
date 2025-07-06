@@ -70,17 +70,16 @@ namespace CppMMO
             std::vector<std::byte> packetToSend;
             packetToSend.reserve(totalPacketLength);
             uint32_t networkByteOrderLength = htonl(bodyLength);
-            std::byte lengthBytes[sizeof(uint32_t)];
-            std::memcpy(lengthBytes, &networkByteOrderLength, sizeof(uint32_t));
-
-            packetToSend.insert(packetToSend.end(), std::span(lengthBytes).begin(), std::span(lengthBytes).end());
+            packetToSend.insert(packetToSend.end(),
+                                reinterpret_cast<const std::byte*>(&networkByteOrderLength),
+                                reinterpret_cast<const std::byte*>(&networkByteOrderLength) + sizeof(uint32_t));
             
             packetToSend.insert(packetToSend.end(), data.begin(), data.end());
 
-            m_writeQueue.emplace_back(std::move(packetToSend));
+            m_writeQueue.enqueue(std::move(packetToSend));
 
             m_timer.cancel_one();
-            LOG_INFO("Session {}: Packet of total {} bytes (body {}) added to write queue. Queue size: {}", m_sessionId, totalPacketLength, bodyLength, m_writeQueue.size());
+            LOG_INFO("Session {}: Packet of total {} bytes (body {}) added to write queue.", m_sessionId, totalPacketLength, bodyLength);
         }
 
         asio::awaitable<void> Session::ReadLoop()
@@ -92,7 +91,7 @@ namespace CppMMO
                     while(m_readBuffer.size() >= sizeof(uint32_t))
                     {
                         uint32_t packetLength = 0;
-                        std::memcpy(&packetLength, asio::buffer_cast<const void*>(m_readBuffer.data()), sizeof(uint32_t));
+                        asio::buffer_copy(asio::buffer(&packetLength, sizeof(uint32_t)), m_readBuffer.data(), sizeof(uint32_t));
                         packetLength = ntohl(packetLength);
 
                         if (m_readBuffer.size() >= sizeof(uint32_t) + packetLength)
@@ -111,8 +110,9 @@ namespace CppMMO
                             break;
                         }
                     }
+
                     size_t bytes_transferred = co_await m_socket.async_read_some(
-                        m_readBuffer.prepare(4096),
+                        m_readBuffer.prepare(READ_BUFFER_SIZE),
                         asio::use_awaitable
                     );
                     m_readBuffer.commit(bytes_transferred);
@@ -139,7 +139,13 @@ namespace CppMMO
             {
                 while(m_socket.is_open())
                 {
-                    if(m_writeQueue.empty())
+                    std::vector<std::byte> packetToSend;
+                    if(m_writeQueue.try_dequeue(packetToSend))
+                    {
+                        co_await asio::async_write(m_socket, asio::buffer(packetToSend), asio::use_awaitable);
+                        LOG_DEBUG("Session {}: Packet sent.", m_sessionId);
+                    }
+                    else
                     {
                         boost::system::error_code ec;
                         co_await m_timer.async_wait(asio::redirect_error(asio::use_awaitable, ec));
@@ -148,12 +154,7 @@ namespace CppMMO
                         {
                             throw boost::system::system_error(ec, "WriteLoop timer wait failed");
                         }
-                        continue;
                     }
-                    co_await asio::async_write(m_socket, asio::buffer(m_writeQueue.front()), asio::use_awaitable);
-
-                    m_writeQueue.pop_front();
-                    LOG_DEBUG("Session {}: Packet sent. Remaining in queue: {}", m_sessionId, m_writeQueue.size());
                 }
             }
             catch (const boost::system::system_error& e)
@@ -170,7 +171,7 @@ namespace CppMMO
             }
         }
 
-        void Session::HandleError(const boost::system::error_code& ec, const std::string& operation)
+        void Session::HandleError(const boost::system::error_code& ec, std::string_view operation)
         {
             if (ec == asio::error::eof || ec == asio::error::operation_aborted)
             {

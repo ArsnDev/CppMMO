@@ -36,7 +36,7 @@ namespace CppMMO
             std::vector<std::thread> m_workerThreads;
             asio::signal_set m_signals;
             asio::awaitable<void> AcceptLoop();
-            void OnSessionDisconnectedInternal(std::shared_ptr<ISession> session);
+            void OnSessionDisconnectedInternal(const std::shared_ptr<ISession>& session);
         };
     }
 }

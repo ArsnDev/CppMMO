@@ -38,6 +38,12 @@ namespace CppMMO
         {
             try
             {
+                if (config.worker_threads <= 0)
+                {
+                    LOG_ERROR("TcpServer Start failed: worker_threads must be greater than 0.");
+                    return false;
+                }
+
                 m_acceptor.listen(asio::socket_base::max_connections);
                 LOG_INFO("TcpServer started listening with backlog {}.", asio::socket_base::max_listen_connections);
 
@@ -79,9 +85,9 @@ namespace CppMMO
                 {
                     thread.join();
                 }
-                m_workerThreads.clear();
-                LOG_INFO("TcpServer stopped and all worker threads joined.");
             }
+            m_workerThreads.clear();
+            LOG_INFO("TcpServer stopped and all worker threads joined.");
         }
 
         void TcpServer::SetOnSessionConnected(const std::function<void(std::shared_ptr<ISession>)>& callback)
@@ -106,9 +112,9 @@ namespace CppMMO
                     co_await m_acceptor.async_accept(socket, asio::use_awaitable);
                     LOG_INFO("New connection accepted from {}", socket.remote_endpoint().address().to_string());
                     auto session = std::make_shared<Session>(std::move(socket), m_packetManager);
-                    session->SetOnDisconnectedCallback([this](std::shared_ptr<ISession> session)
+                    session->SetOnDisconnectedCallback([self = shared_from_this()](std::shared_ptr<ISession> session)
                     {
-                        this->OnSessionDisconnectedInternal(session);
+                        self->OnSessionDisconnectedInternal(session);
                     });
                     session->Start();
                     if (m_onSessionConnected)
@@ -135,7 +141,7 @@ namespace CppMMO
             co_return;
         }
 
-        void TcpServer::OnSessionDisconnectedInternal(std::shared_ptr<ISession> session)
+        void TcpServer::OnSessionDisconnectedInternal(const std::shared_ptr<ISession>& session)
         {
             LOG_INFO("Session disconnected.");
             if(m_onSessionDisconnected)

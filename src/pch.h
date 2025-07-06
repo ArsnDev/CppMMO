@@ -26,6 +26,10 @@
 #include <boost/asio/detached.hpp>
 #include <boost/asio/use_awaitable.hpp> 
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/experimental/awaitable_operators.hpp>
+
+// ========================[ concurrentqueue 라이브러리 ]========================
+#include <concurrentqueue.h>
 
 // ========================[ Spdlog 라이브러리 ]========================
 #include "Utils/Logger.h"

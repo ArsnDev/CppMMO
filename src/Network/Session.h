@@ -29,24 +29,25 @@ namespace CppMMO
             ip::tcp::socket m_socket;
             std::shared_ptr<IPacketManager> m_packetManager;
 
+            static constexpr size_t READ_BUFFER_SIZE = 4096;
             asio::streambuf m_readBuffer;
             std::array<std::byte, 4> m_packetHeader;
 
-            std::deque<std::vector<std::byte>> m_writeQueue;
-            bool m_writing{false};
+            moodycamel::ConcurrentQueue<std::vector<std::byte>> m_writeQueue;
 
             uint64_t m_sessionId;
             asio::steady_timer m_timer;
 
-            std::chrono::steady_clock::time_point m_readDeadline;
-            std::chrono::steady_clock::time_point m_writeDeadline;
+            // TODO : Set Timeout For Read & Write
+            // std::chrono::steady_clock::time_point m_readDeadline;
+            // std::chrono::steady_clock::time_point m_writeDeadline;
             
             std::function<void(std::shared_ptr<ISession>)> m_onDisconnectedCallback;
             
             asio::awaitable<void> ReadLoop();
             asio::awaitable<void> WriteLoop();
 
-            void HandleError(const boost::system::error_code& ec, const std::string& operation);
+            void HandleError(const boost::system::error_code& ec, std::string_view operation);
 
             static std::atomic<uint64_t> s_nextSessionId;
         };

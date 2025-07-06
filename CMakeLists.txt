@@ -79,6 +79,19 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(spdlog_src)
 
+# =========================[ 외부 라이브러리: concurrentqueue ]=========================
+FetchContent_Declare(
+    concurrentqueue_src
+    GIT_REPOSITORY https://github.com/cameron314/concurrentqueue.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(concurrentqueue_src)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${concurrentqueue_src_SOURCE_DIR}
+)
+
 # =========================[ 외부 라이브러리: redis-plus-plus ]=========================
 find_package(redis++ CONFIG REQUIRED)
 

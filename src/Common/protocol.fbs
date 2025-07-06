@@ -1,5 +1,16 @@
 namespace CppMMO.Protocol;
 
+enum PacketId : short{
+    NONE = 0,
+    C_ENTER_ROOM = 1,
+    C_MOVE = 2,
+    S_ENTER_ROOM_RESULT = 101,
+    S_PLAYER_JOINED = 102,
+    S_PLAYER_MOVED = 103,
+    S_PLAYER_LEFT = 104,
+    S_GAME_UPDATE = 105
+}
+
 struct Vec2
 {
     x:float;
@@ -20,18 +31,6 @@ table RoomInfo
     name:string;
     max_players:byte;
     current_players:byte;
-}
-
-// --- Pakcet ID ---
-enum PacketId : short
-{
-    NONE = 0,
-    C_ENTER_ROOM = 1,
-    C_MOVE = 2,
-    S_ENTER_ROOM_RESULT = 101,
-    S_PLAYER_JOINED = 102,
-    S_PLAYER_MOVED = 103,
-    S_PLAYER_LEFT = 104
 }
 
 // ---클라이언트 -> 서버 메시지 ---
@@ -74,20 +73,24 @@ table S_PlayerLeft
     player_id:long;
 }
 
-union AnyMessage
-{
+table S_GameUpdate {
+    players: [PlayerInfo];
+}
+
+union AnyMessage{
     C_EnterRoom,
     C_Move,
     S_EnterRoomResult,
     S_PlayerJoined,
     S_PlayerMoved,
-    S_PlayerLeft
+    S_PlayerLeft,
+    S_GameUpdate
 }
 
-table UnifiedPacket
-{
+table UnifiedPacket{
     id: PacketId;
     message_data:AnyMessage;
 }
 
 root_type UnifiedPacket;
+
