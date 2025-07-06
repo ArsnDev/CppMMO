@@ -15,7 +15,7 @@ namespace CppMMO
         class Session : public ISession, public std::enable_shared_from_this<Session>
         {
         public:
-            explicit Session(ip::tcp::socket socket, std::shared_ptr<IPacketManager> packetManager);
+            explicit Session(ip::tcp::socket socket, const std::shared_ptr<IPacketManager> packetManager);
             virtual ~Session() = default;
 
             virtual void Start() override;
@@ -24,6 +24,7 @@ namespace CppMMO
             virtual bool IsConnected() const override;
             virtual void Send(std::span<const std::byte> data) override;
 
+            virtual void SetOnDisconnectedCallback(const std::function<void(std::shared_ptr<ISession>)>& callback) override;
         private:
             ip::tcp::socket m_socket;
             std::shared_ptr<IPacketManager> m_packetManager;
@@ -32,13 +33,15 @@ namespace CppMMO
             std::array<std::byte, 4> m_packetHeader;
 
             std::deque<std::vector<std::byte>> m_writeQueue;
-            bool m_writing;
+            bool m_writing{false};
 
             uint64_t m_sessionId;
             asio::steady_timer m_timer;
 
-            std::chrono::steady_clock::time_point m_readDeadLine;
-            std::chrono::steady_clock::time_point m_writeDeadLine;
+            std::chrono::steady_clock::time_point m_readDeadline;
+            std::chrono::steady_clock::time_point m_writeDeadline;
+            
+            std::function<void(std::shared_ptr<ISession>)> m_onDisconnectedCallback;
             
             asio::awaitable<void> ReadLoop();
             asio::awaitable<void> WriteLoop();

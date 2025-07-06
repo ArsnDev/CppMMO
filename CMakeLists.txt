@@ -138,6 +138,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Boost::program_options
     Boost::filesystem
 )
+if (VCPKG_TOOLCHAIN_FILE)
+    vcpkg_copy_tool_dependencies(${PROJECT_NAME})
+endif()
 
 # =========================[ Doxygen 문서화 ]=========================
 find_package(Doxygen QUIET)

@@ -16,13 +16,14 @@ namespace CppMMO
         /**
          *  @brief 패킷 핸들러 함수의 타입을 정의합니다.
          *  @param std::shared_ptr<ISession> 패킷을 수신한 세션의 포인터입니다.
-         *  @param const Protocol::AnyMessage& FlatBuffers의 union 타입으로, 실제 패킷 데이터입니다.
+         *  @param const Protocol::UnifiedPacket* FlatBuffers의 타입으로, 실제 패킷 데이터입니다.
          */
         using PacketHandler = std::function<void(std::shared_ptr<ISession>, const Protocol::UnifiedPacket*)>;
 
         class IPacketManager
         {
         public:
+            IPacketManager() = default;
             virtual ~IPacketManager() = default;
 
             IPacketManager(const IPacketManager&) = delete;
@@ -33,7 +34,7 @@ namespace CppMMO
              *  @param id 처리할 패킷의 ID입니다.
              *  @param handler 해당 ID의 패킷이 수신되었을 때 호출될 함수입니다.
              */
-            virtual void RegisterHandler(PacketId id, PacketHandler handler) = 0;
+            virtual void RegisterHandler(PacketId id, const PacketHandler& handler) = 0;
             /**
              *  @brief 등록된 핸들러를 제거합니다.
              *  @param id 제거할 핸들러가 등록된 패킷의 ID입니다.
@@ -44,7 +45,7 @@ namespace CppMMO
              *  @param session 패킷을 수신한 세션입니다.
              *  @param packet FlatBuffers를 통해 파싱된 최상위 패킷 객체입니다.
              */
-            virtual void HandlePacket(std::shared_ptr<ISession> session, const Protocol::UnifiedPacket* packet) = 0;
+            virtual void HandlePacket(const std::shared_ptr<ISession>& session, const Protocol::UnifiedPacket* packet) = 0;
         };
     }
 }

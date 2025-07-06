@@ -16,6 +16,7 @@ namespace CppMMO
         class IService
         {
         public:
+            IService() = default;
             virtual ~IService() = default;
 
             IService(const IService&) = delete;
@@ -24,8 +25,8 @@ namespace CppMMO
             virtual bool Start(const ServiceConfig& config) = 0;
             virtual void Stop() = 0;
 
-            virtual void SetOnSessionConnected(std::function<void(std::shared_ptr<ISession>)> callback) = 0;
-            virtual void SetOnSessionDisconnected(std::function<void(std::shared_ptr<ISession>)> callback) = 0;
+            virtual void SetOnSessionConnected(const std::function<void(std::shared_ptr<ISession>)>& callback) = 0;
+            virtual void SetOnSessionDisconnected(const std::function<void(std::shared_ptr<ISession>)>& callback) = 0;
         };
     }
 }

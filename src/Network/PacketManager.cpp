@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "PacketManager.h"
-#include "ISession.h"
-#include "protocol_generated.h"
 
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
@@ -10,7 +8,7 @@ namespace CppMMO
 {
     namespace Network
     {
-        void PacketManager::RegisterHandler(PacketId id, PacketHandler handler)
+        void PacketManager::RegisterHandler(PacketId id, const PacketHandler& handler)
         {
             if(!handler)
             {
@@ -27,7 +25,7 @@ namespace CppMMO
             LOG_INFO("Handler unregistered for PacketId: {}", static_cast<int>(id));
         }
 
-        void PacketManager::HandlePacket(std::shared_ptr<ISession> session, const Protocol::UnifiedPacket* packet)
+        void PacketManager::HandlePacket(const std::shared_ptr<ISession>& session, const Protocol::UnifiedPacket* packet)
         {
             PacketId packetId = packet->id();
             auto it = m_handlers.find(packetId);
