@@ -1,9 +1,12 @@
 #pragma once
-
-#include "protocol_generated.h"
+#include "pch.h"
 
 namespace CppMMO
 {
+    namespace Network
+    {
+        class ISession;
+    }
     namespace Game
     {
         namespace Models
@@ -11,12 +14,22 @@ namespace CppMMO
             class Player
             {
             public:
-            //     //Vec2&로 전달해도되는지 check
-            //     Player(long player_id, const std::string& name, const Protocol::Vec2* position, int hp, int max_hp);
-            //     long GetPlayerId() const {return player_id;}
-            //     const std::string& GetName() const{return m_name;}
-            //     const protocol
-            // private:
+                Player();
+
+                uint64_t GetPlayerId() const {return m_playerId;}
+                void SetSession(std::shared_ptr<Network::ISession> const& session) { m_session = session;}
+                void Update(float deltaTime);
+
+            private:
+                uint64_t m_playerId = 0;
+                std::string m_name{};
+
+                float m_x = 0.0f;
+                float m_y = 0.0f;
+                int32_t m_hp = 0;
+
+                std::mutex m_playerMutex;
+                std::weak_ptr<Network::ISession> m_session;
             };
         }
     }

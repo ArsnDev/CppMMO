@@ -39,9 +39,10 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
     src/Network/TcpServer.cpp
     src/Network/Session.cpp
-    src/Network/PacketManager.cpp
+    src/Game/Managers/PacketManager.cpp
     src/Game/Managers/GameManager.cpp
     src/Game/Managers/ChatManager.cpp
+    src/Game/Models/Player.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
     src/Game/Services/RedisChatService.cpp
