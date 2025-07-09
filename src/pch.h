@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
 #include <array>
 #include <deque>
@@ -11,8 +12,13 @@
 #include <optional>
 #include <stdexcept>
 #include <cstdint>
+#include <cstddef>
 #include <atomic>
 #include <chrono>
+#include <span>
+#include <mutex>
+#include <functional>
+#include <thread>
 
 // ========================[ Boost 라이브러리 ]========================
 #include <boost/system/error_code.hpp>

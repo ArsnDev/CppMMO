@@ -1,96 +1,138 @@
 namespace CppMMO.Protocol;
 
-enum PacketId : short{
-    NONE = 0,
-    C_ENTER_ROOM = 1,
-    C_MOVE = 2,
-    S_ENTER_ROOM_RESULT = 101,
-    S_PLAYER_JOINED = 102,
-    S_PLAYER_MOVED = 103,
-    S_PLAYER_LEFT = 104,
-    S_GAME_UPDATE = 105
+// Vector for 2D position
+struct Vec2 {
+  x:float;
+  y:float;
 }
 
-struct Vec2
-{
-    x:float;
-    y:float;
+// Information about a player
+table PlayerInfo {
+  player_id:long;
+  name:string;
+  position:Vec2;
+  hp:int;
+  max_hp:int;
 }
 
-table PlayerInfo
-{
-    id:long;
-    username:string;
-    position:Vec2;
-    rotation:float;
+// Information about an NPC
+table NpcInfo {
+  npc_id:long;
+  type_id:int;
+  position:Vec2;
+  hp:int;
 }
 
-table RoomInfo
-{
-    id:long;
-    name:string;
-    max_players:byte;
-    current_players:byte;
+// Enum for all packet types
+enum PacketId : ushort {
+  NONE = 0,
+  // Login
+  C_Login = 1,
+  S_Login = 2,
+  // Chat
+  C_Chat = 3,
+  S_Chat = 4,
+  // Player Movement (2D game)
+  C_Move = 5,
+  S_PlayerMove = 6,
+  // Zone System
+  C_ChangeZone = 7,
+  S_EnterZone = 8,
+  S_LeaveZone = 9,
+  S_PlayerEnterZone = 10,
+  S_PlayerLeaveZone = 11,
+  // Player Stats Update
+  S_PlayerHpUpdate = 12,
 }
 
-// ---클라이언트 -> 서버 메시지 ---
-table C_EnterRoom
-{
-    room_id:long;
-    username:string;
+// --- Packet Body Definitions ---
+
+// C_Login: Client requests to login
+table C_Login {
+  id:string;
 }
 
-table C_Move
-{
-    player_id:long;
-    new_position:Vec2;
-    new_rotation:float;
+// S_Login: Server responds to login request
+table S_Login {
+  success:bool;
+  player_info:PlayerInfo;
 }
 
-// ---서버 -> 클라이언트 메시지 ---
-table S_EnterRoomResult
-{
-    entered:bool;
-    message:string;
-    player_id:long;
-    players_in_room:[PlayerInfo];
+// C_Chat: Client sends a chat message
+table C_Chat {
+  message:string;
 }
 
-table S_PlayerJoined
-{
-    player:PlayerInfo;
+// S_Chat: Server broadcasts a chat message
+table S_Chat {
+  player_id:long;
+  message:string;
 }
 
-table S_PlayerMoved
-{
-    player_id:long;
-    new_position:Vec2;
-    new_rotation:float;
+// C_Move: Client requests to move
+table C_Move {
+  target_position:Vec2;
 }
 
-table S_PlayerLeft
-{
-    player_id:long;
+// S_PlayerMove: Server notifies clients about another player's movement
+table S_PlayerMove {
+  player_id:long;
+  target_position:Vec2;
 }
 
-table S_GameUpdate {
-    players: [PlayerInfo];
+// S_PlayerHpUpdate: Server notifies clients about a player's HP change
+table S_PlayerHpUpdate {
+  player_id:long;
+  current_hp:int;
 }
 
-union AnyMessage{
-    C_EnterRoom,
-    C_Move,
-    S_EnterRoomResult,
-    S_PlayerJoined,
-    S_PlayerMoved,
-    S_PlayerLeft,
-    S_GameUpdate
+// C_ChangeZone: Client requests to move to a different zone
+table C_ChangeZone {
+  target_zone_id:int;
 }
 
-table UnifiedPacket{
-    id: PacketId;
-    message_data:AnyMessage;
+// S_EnterZone: Server confirms zone entry and provides initial state
+table S_EnterZone {
+  zone_id:int;
+  my_player:PlayerInfo;
+  other_players:[PlayerInfo];
+  npcs:[NpcInfo];
+}
+
+// S_LeaveZone: Server confirms the player has left the zone
+table S_LeaveZone {
+}
+
+// S_PlayerEnterZone: Server notifies clients that a new player entered their zone
+table S_PlayerEnterZone {
+  player_info:PlayerInfo;
+}
+
+// S_PlayerLeaveZone: Server notifies clients that a player left their zone
+table S_PlayerLeaveZone {
+  player_id:long;
+}
+
+// Union to hold any possible packet data
+union Packet {
+  C_Login,
+  S_Login,
+  C_Chat,
+  S_Chat,
+  C_Move,
+  S_PlayerMove,
+  S_PlayerHpUpdate,
+  C_ChangeZone,
+  S_EnterZone,
+  S_LeaveZone,
+  S_PlayerEnterZone,
+  S_PlayerLeaveZone,
+}
+
+// Root table for all packets
+table UnifiedPacket {
+  id:PacketId;
+  data:Packet;
 }
 
 root_type UnifiedPacket;
-

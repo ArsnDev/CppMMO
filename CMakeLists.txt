@@ -37,10 +37,17 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
-    src/Utils/Logger.cpp
     src/Network/TcpServer.cpp
     src/Network/Session.cpp
     src/Network/PacketManager.cpp
+    src/Game/Managers/GameManager.cpp
+    src/Game/Managers/ChatManager.cpp
+    src/Game/PacketHandlers/LoginPacketHandler.cpp
+    src/Game/PacketHandlers/ChatPacketHandler.cpp
+    src/Game/Services/RedisChatService.cpp
+    src/Utils/JobProcessor.cpp
+    src/Utils/JobQueue.cpp
+    src/Utils/Logger.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
 )
 
@@ -50,6 +57,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(
         _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
         _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
+        _WIN32_WINNT=0x0A00
     )
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -139,6 +147,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/Utils
     ${CMAKE_SOURCE_DIR}/src/Network
+    ${CMAKE_SOURCE_DIR}/src/Game/Interfaces
+    ${CMAKE_SOURCE_DIR}/src/Game/Managers
+    ${CMAKE_SOURCE_DIR}/src/Game/Models
+    ${CMAKE_SOURCE_DIR}/src/Game/PacketHandlers
+    ${CMAKE_SOURCE_DIR}/src/Game/Services
 )
 
 # =========================[ 라이브러리 링크 ]=========================

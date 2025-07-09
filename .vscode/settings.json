@@ -92,6 +92,16 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "strstream": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "xstddef": "cpp",
+        "cfenv": "cpp",
+        "csetjmp": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "queue": "cpp",
+        "scoped_allocator": "cpp",
+        "valarray": "cpp",
+        "resumable": "cpp"
     }
 }

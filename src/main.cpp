@@ -1,7 +1,12 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Utils/JobQueue.h"
+#include "Utils/JobProcessor.h"
 #include "Network/TcpServer.h"
 #include "Network/PacketManager.h"
+#include "Game/PacketHandlers/LoginPacketHandler.h"
+#include "Game/PacketHandlers/ChatPacketHandler.h"
+#include "Game/Managers/ChatManager.h"
 #include <boost/program_options.hpp>
 #include "protocol_generated.h"
 
@@ -19,7 +24,8 @@ int main(int argc, char* argv[])
     desc.add_options()
         ("help,h", "Print Help Message.")
         ("port,p", po::value<unsigned short>()->default_value(8080), "Set Server Port.")
-        ("threads,t", po::value<int>()->default_value(4), "Set WorkerThread Num.");
+        ("io-threads", po::value<int>()->default_value(2), "Set number of network I/O threads.")
+        ("logic-threads", po::value<int>()->default_value(4), "Set number of logic processing threads.");
 
     po::variables_map vm;
     try
@@ -42,33 +48,34 @@ int main(int argc, char* argv[])
     }
 
     unsigned short port = vm["port"].as<unsigned short>();
-    int threadCount = vm["threads"].as<int>();
+    int ioThreadCount = vm["io-threads"].as<int>();
+    int logicThreadCount = vm["logic-threads"].as<int>();
 
-    LOG_INFO("Server configured: Port={}, Threads={}", port, threadCount);
+    LOG_INFO("Server configured: Port={}, IO Threads={}, Logic Threads={}", port, ioThreadCount, logicThreadCount);
 
     try
     {
         asio::io_context io_context;
 
-        auto packetManager = std::make_shared<CppMMO::Network::PacketManager>();
+        auto jobQueue = std::make_shared<CppMMO::Utils::JobQueue>();
+        auto packetManager = std::make_shared<CppMMO::Network::PacketManager>(jobQueue);
+        auto jobProcessor = std::make_shared<CppMMO::Utils::JobProcessor>(jobQueue, packetManager);
+        
+        jobProcessor->Start(logicThreadCount);
+
+        packetManager->RegisterHandler(PacketId_C_Login, CppMMO::Game::PacketHandlers::LoginPacketHandler());
+        packetManager->RegisterHandler(PacketId_C_Chat, CppMMO::Game::PacketHandlers::ChatPacketHandler());
 
         auto server = std::make_shared<CppMMO::Network::TcpServer>(io_context, port, packetManager);
 
-        server->SetOnSessionConnected([](std::shared_ptr<CppMMO::Network::ISession> session)
-        {
-            LOG_INFO("Client connected: {}", session->GetRemoteEndpoint().address().to_string());
-        });
-
-        server->SetOnSessionDisconnected([](std::shared_ptr<CppMMO::Network::ISession> session)
-        {
-            LOG_INFO("Client disconnected: {}", session->GetRemoteEndpoint().address().to_string());
-        });
+        CppMMO::Game::Managers::ChatManager::GetInstance().Initialize(server);
 
         CppMMO::Network::ServiceConfig config;
-        config.worker_threads = threadCount;
+        config.worker_threads = ioThreadCount;
         if (!server->Start(config))
         {
             LOG_CRITICAL("Server failed to start.");
+            jobProcessor->Stop();
             return 1;
         }
 
@@ -76,6 +83,7 @@ int main(int argc, char* argv[])
 
         io_context.run();
 
+        jobProcessor->Stop();
         LOG_INFO("Server stopped.");
     }
     catch (const std::exception& e)

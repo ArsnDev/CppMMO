@@ -25,6 +25,7 @@ namespace CppMMO
             virtual void Send(std::span<const std::byte> data) override;
 
             virtual void SetOnDisconnectedCallback(const std::function<void(std::shared_ptr<ISession>)>& callback) override;
+            virtual uint64_t GetSessionId() const override { return m_sessionId; }
         private:
             ip::tcp::socket m_socket;
             std::shared_ptr<IPacketManager> m_packetManager;

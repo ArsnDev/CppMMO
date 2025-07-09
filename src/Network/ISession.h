@@ -34,6 +34,7 @@ namespace CppMMO
             virtual void Send(std::span<const std::byte> data) = 0;
 
             virtual void SetOnDisconnectedCallback(const std::function<void(std::shared_ptr<ISession>)>& callback) = 0;
+            virtual uint64_t GetSessionId() const = 0;
         };
     }
 }

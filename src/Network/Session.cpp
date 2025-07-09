@@ -97,20 +97,24 @@ namespace CppMMO
                         if (m_readBuffer.size() >= sizeof(uint32_t) + packetLength)
                         {
                             m_readBuffer.consume(sizeof(uint32_t));
-                            const uint8_t* flatbuffer_data = reinterpret_cast<const uint8_t*>(
-                                asio::buffer_cast<const std::byte*>(m_readBuffer.data()));
-                            const Protocol::UnifiedPacket* unified_packet = 
-                                flatbuffers::GetRoot<Protocol::UnifiedPacket>(flatbuffer_data);
-                            m_packetManager->HandlePacket(shared_from_this(), unified_packet);
+                            const uint8_t* flatbuffer_data_ptr = reinterpret_cast<const uint8_t*>(asio::buffer_cast<const std::byte*>(m_readBuffer.data()));
+                            std::vector<uint8_t> raw_packet_data(packetLength);
+                            std::memcpy(raw_packet_data.data(), flatbuffer_data_ptr, packetLength);
+                            if (m_packetManager)
+                            {
+                                m_packetManager->HandlePacket(shared_from_this(), std::span<const uint8_t>(raw_packet_data.data(), raw_packet_data.size()));
+                            }
+                            else
+                            {
+                                LOG_ERROR("PacketManager is null in Session ReadLoop.");
+                            }
                             m_readBuffer.consume(packetLength);
-                            LOG_DEBUG("Session {}: Processed packet with ID: {}", m_sessionId, static_cast<int>(unified_packet->id()));
                         }
                         else
                         {
                             break;
                         }
                     }
-
                     size_t bytes_transferred = co_await m_socket.async_read_some(
                         m_readBuffer.prepare(READ_BUFFER_SIZE),
                         asio::use_awaitable
