@@ -10,10 +10,12 @@ namespace CppMMO
     {
         TcpServer::TcpServer(asio::io_context& io_context,
                             unsigned short port,
-                            std::shared_ptr<IPacketManager> packetManager)
-                            :m_ioContext(io_context),
+                            std::shared_ptr<IPacketManager> packetManager,
+                            std::shared_ptr<ISessionManager> sessionManager)
+                            : m_ioContext(io_context),
                             m_acceptor(io_context, ip::tcp::endpoint(ip::tcp::v4(), port)),
                             m_packetManager(packetManager),
+                            m_sessionManager(sessionManager),
                             m_signals(io_context, SIGINT, SIGTERM)
         {
             LOG_INFO("TcpServer Created. Listening on port {}", port);
@@ -117,6 +119,10 @@ namespace CppMMO
                         self->OnSessionDisconnectedInternal(session);
                     });
                     session->Start();
+                    if (m_sessionManager)
+                    {
+                        m_sessionManager->AddSession(session);
+                    }
                     if (m_onSessionConnected)
                     {
                         m_onSessionConnected(session);
@@ -144,6 +150,10 @@ namespace CppMMO
         void TcpServer::OnSessionDisconnectedInternal(const std::shared_ptr<ISession>& session)
         {
             LOG_INFO("Session disconnected.");
+            if (m_sessionManager && session)
+            {
+                m_sessionManager->RemoveSession(session->GetSessionId());
+            }
             if(m_onSessionDisconnected)
             {
                 m_onSessionDisconnected(session);

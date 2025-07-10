@@ -15,9 +15,7 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0077 NEW)
 cmake_policy(SET CMP0167 NEW)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
 
 # =========================[ 실행 파일 및 소스 파일 ]=========================
 add_executable(${PROJECT_NAME})
@@ -36,16 +34,18 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
-    src/main.cpp
-    src/Network/TcpServer.cpp
-    src/Network/Session.cpp
+    src/main.cpp    
     src/Network/PacketManager.cpp
-    src/Game/Managers/GameManager.cpp
+    src/Network/Session.cpp
+    src/Network/SessionManager.cpp
+    src/Network/TcpServer.cpp
     src/Game/Managers/ChatManager.cpp
+    src/Game/Managers/GameManager.cpp
     src/Game/Models/Player.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
     src/Game/Services/RedisChatService.cpp
+    src/Game/GameLogicQueue.cpp
     src/Utils/JobProcessor.cpp
     src/Utils/JobQueue.cpp
     src/Utils/Logger.cpp
@@ -148,6 +148,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/Utils
     ${CMAKE_SOURCE_DIR}/src/Network
+    ${CMAKE_SOURCE_DIR}/src/Game
     ${CMAKE_SOURCE_DIR}/src/Game/Interfaces
     ${CMAKE_SOURCE_DIR}/src/Game/Managers
     ${CMAKE_SOURCE_DIR}/src/Game/Models

@@ -4,6 +4,9 @@
 #include "Utils/JobProcessor.h"
 #include "Network/TcpServer.h"
 #include "Network/PacketManager.h"
+#include "Network/SessionManager.h"
+#include "Game/GameLogicQueue.h"
+#include "Game/Managers/GameManager.h"
 #include "Game/PacketHandlers/LoginPacketHandler.h"
 #include "Game/PacketHandlers/ChatPacketHandler.h"
 #include "Game/Managers/ChatManager.h"
@@ -59,14 +62,18 @@ int main(int argc, char* argv[])
 
         auto jobQueue = std::make_shared<CppMMO::Utils::JobQueue>();
         auto packetManager = std::make_shared<CppMMO::Network::PacketManager>(jobQueue);
-        auto jobProcessor = std::make_shared<CppMMO::Utils::JobProcessor>(jobQueue, packetManager);
+        auto sessionManager = std::make_shared<CppMMO::Network::SessionManager>();
+        auto gameLogicQueue = std::make_shared<CppMMO::Game::GameLogicQueue>();
+        auto jobProcessor = std::make_shared<CppMMO::Utils::JobProcessor>(jobQueue, packetManager, gameLogicQueue);
+        auto gameManager = std::make_shared<CppMMO::Game::Managers::GameManager>(gameLogicQueue, sessionManager);
         
         jobProcessor->Start(logicThreadCount);
+        gameManager->Start();
 
         packetManager->RegisterHandler(PacketId_C_Login, CppMMO::Game::PacketHandlers::LoginPacketHandler());
         packetManager->RegisterHandler(PacketId_C_Chat, CppMMO::Game::PacketHandlers::ChatPacketHandler());
 
-        auto server = std::make_shared<CppMMO::Network::TcpServer>(io_context, port, packetManager);
+        auto server = std::make_shared<CppMMO::Network::TcpServer>(io_context, port, packetManager, sessionManager);
 
         CppMMO::Game::Managers::ChatManager::GetInstance().Initialize(server);
 
@@ -75,6 +82,7 @@ int main(int argc, char* argv[])
         if (!server->Start(config))
         {
             LOG_CRITICAL("Server failed to start.");
+            gameManager->Stop();
             jobProcessor->Stop();
             return 1;
         }
@@ -83,6 +91,7 @@ int main(int argc, char* argv[])
 
         io_context.run();
 
+        gameManager->Stop();
         jobProcessor->Stop();
         LOG_INFO("Server stopped.");
     }

@@ -82,54 +82,62 @@ namespace CppMMO
             LOG_INFO("Session {}: Packet of total {} bytes (body {}) added to write queue.", m_sessionId, totalPacketLength, bodyLength);
         }
 
+        uint64_t Session::GetPlayerId() const
+        {
+            return m_playerId;
+        }
+
+        void Session::SetPlayerId(uint64_t playerId)
+        {
+            m_playerId = playerId;
+            LOG_DEBUG("Session {}: PlayerId set to {}.", m_sessionId, m_playerId);
+        }
+
         asio::awaitable<void> Session::ReadLoop()
         {
             try
             {
-                while(true)
+                while (true)
                 {
-                    while(m_readBuffer.size() >= sizeof(uint32_t))
+                    auto [error, bytes_transferred] = co_await asio::async_read(m_socket, asio::buffer(m_readHeader), asio::as_tuple(asio::use_awaitable));
+                    if (error)
                     {
-                        uint32_t packetLength = 0;
-                        asio::buffer_copy(asio::buffer(&packetLength, sizeof(uint32_t)), m_readBuffer.data(), sizeof(uint32_t));
-                        packetLength = ntohl(packetLength);
-
-                        if (m_readBuffer.size() >= sizeof(uint32_t) + packetLength)
-                        {
-                            m_readBuffer.consume(sizeof(uint32_t));
-                            const uint8_t* flatbuffer_data_ptr = reinterpret_cast<const uint8_t*>(asio::buffer_cast<const std::byte*>(m_readBuffer.data()));
-                            std::vector<uint8_t> raw_packet_data(packetLength);
-                            std::memcpy(raw_packet_data.data(), flatbuffer_data_ptr, packetLength);
-                            if (m_packetManager)
-                            {
-                                m_packetManager->HandlePacket(shared_from_this(), std::span<const uint8_t>(raw_packet_data.data(), raw_packet_data.size()));
-                            }
-                            else
-                            {
-                                LOG_ERROR("PacketManager is null in Session ReadLoop.");
-                            }
-                            m_readBuffer.consume(packetLength);
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        HandleError(error, "ReadLoop header");
+                        Disconnect();
+                        co_return;
                     }
-                    size_t bytes_transferred = co_await m_socket.async_read_some(
-                        m_readBuffer.prepare(READ_BUFFER_SIZE),
-                        asio::use_awaitable
-                    );
-                    m_readBuffer.commit(bytes_transferred);
-                    LOG_DEBUG("Session {}: Read {} bytes from socket.", m_sessionId, bytes_transferred);
+
+                    uint32_t bodyLength;
+                    std::memcpy(&bodyLength, m_readHeader.data(), sizeof(uint32_t));
+                    bodyLength = ntohl(bodyLength);
+
+                    m_readBody.resize(bodyLength);
+                    auto [body_error, body_bytes_transferred] = co_await asio::async_read(m_socket, asio::buffer(m_readBody), asio::as_tuple(asio::use_awaitable));
+
+                    if (body_error)
+                    {
+                        HandleError(body_error, "ReadLoop body");
+                        Disconnect();
+                        co_return;
+                    }
+
+                    if (m_packetManager)
+                    {
+                        m_packetManager->HandlePacket(shared_from_this(), m_readBody);
+                    }
+                    else
+                    {
+                        LOG_ERROR("PacketManager is null in Session ReadLoop.");
+                    }
                 }
             }
-            catch(const boost::system::system_error& e)
+            catch (const boost::system::system_error& e)
             {
                 HandleError(e.code(), "ReadLoop");
                 Disconnect();
                 co_return;
             }
-            catch(const std::exception& e)
+            catch (const std::exception& e)
             {
                 LOG_ERROR("Session {}: Unexpected exception in ReadLoop: {}", m_sessionId, e.what());
                 Disconnect();

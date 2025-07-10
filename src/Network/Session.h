@@ -26,17 +26,19 @@ namespace CppMMO
 
             virtual void SetOnDisconnectedCallback(const std::function<void(std::shared_ptr<ISession>)>& callback) override;
             virtual uint64_t GetSessionId() const override { return m_sessionId; }
+            virtual uint64_t GetPlayerId() const override;
+            virtual void SetPlayerId(uint64_t playerId) override;
         private:
             ip::tcp::socket m_socket;
             std::shared_ptr<IPacketManager> m_packetManager;
 
-            static constexpr size_t READ_BUFFER_SIZE = 4096;
-            asio::streambuf m_readBuffer;
-            std::array<std::byte, 4> m_packetHeader;
+            std::array<std::byte, 4> m_readHeader;
+            std::vector<std::byte> m_readBody;
 
             moodycamel::ConcurrentQueue<std::vector<std::byte>> m_writeQueue;
 
             uint64_t m_sessionId;
+            uint64_t m_playerId = 0;
             asio::steady_timer m_timer;
 
             // TODO : Set Timeout For Read & Write

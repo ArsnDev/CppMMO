@@ -15,14 +15,6 @@ table PlayerInfo {
   max_hp:int;
 }
 
-// Information about an NPC
-table NpcInfo {
-  npc_id:long;
-  type_id:int;
-  position:Vec2;
-  hp:int;
-}
-
 // Enum for all packet types
 enum PacketId : ushort {
   NONE = 0,
@@ -50,34 +42,40 @@ enum PacketId : ushort {
 // C_Login: Client requests to login
 table C_Login {
   id:string;
+  command_id:long;
 }
 
 // S_Login: Server responds to login request
 table S_Login {
   success:bool;
   player_info:PlayerInfo;
+  command_id:long;
 }
 
 // C_Chat: Client sends a chat message
 table C_Chat {
   message:string;
+  command_id:long;
 }
 
 // S_Chat: Server broadcasts a chat message
 table S_Chat {
   player_id:long;
   message:string;
+  command_id:long;
 }
 
 // C_Move: Client requests to move
 table C_Move {
   target_position:Vec2;
+  command_id:long;
 }
 
 // S_PlayerMove: Server notifies clients about another player's movement
 table S_PlayerMove {
   player_id:long;
   target_position:Vec2;
+  command_id:long;
 }
 
 // S_PlayerHpUpdate: Server notifies clients about a player's HP change
@@ -89,6 +87,7 @@ table S_PlayerHpUpdate {
 // C_ChangeZone: Client requests to move to a different zone
 table C_ChangeZone {
   target_zone_id:int;
+  command_id:long;
 }
 
 // S_EnterZone: Server confirms zone entry and provides initial state
@@ -96,7 +95,7 @@ table S_EnterZone {
   zone_id:int;
   my_player:PlayerInfo;
   other_players:[PlayerInfo];
-  npcs:[NpcInfo];
+  player_id:long;
 }
 
 // S_LeaveZone: Server confirms the player has left the zone

@@ -10,8 +10,7 @@ namespace CppMMO
         struct Job
         {
             std::shared_ptr<Network::ISession> session;
-            std::vector<uint8_t> packetBuffer;
-            Protocol::PacketId packetId;
+            std::vector<std::byte> packetBuffer;
             bool isShutdownSignal = false;
         };
 

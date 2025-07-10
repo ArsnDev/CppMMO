@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "IService.h"
 #include "IPacketManager.h" 
+#include "ISessionManager.h"
 #include "Session.h"
 
 namespace asio = boost::asio;
@@ -16,7 +17,9 @@ namespace CppMMO
         class TcpServer : public IService, public std::enable_shared_from_this<TcpServer>
         {
         public:
-            explicit TcpServer(asio::io_context& io_context, unsigned short port, std::shared_ptr<IPacketManager> packetManager);
+            explicit TcpServer(asio::io_context& io_context, unsigned short port, 
+                               std::shared_ptr<IPacketManager> packetManager,
+                               std::shared_ptr<ISessionManager> sessionManager);
             virtual ~TcpServer();
 
             virtual bool Start(const ServiceConfig& config) override;
@@ -29,6 +32,7 @@ namespace CppMMO
             asio::io_context& m_ioContext;
             asio::ip::tcp::acceptor m_acceptor;
             std::shared_ptr<IPacketManager> m_packetManager;
+            std::shared_ptr<ISessionManager> m_sessionManager;
 
             std::function<void(std::shared_ptr<ISession>)> m_onSessionConnected;
             std::function<void(std::shared_ptr<ISession>)> m_onSessionDisconnected;

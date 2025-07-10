@@ -32,41 +32,15 @@ namespace CppMMO
             LOG_INFO("Handler unregistered for PacketId: {}", static_cast<int>(id));
         }
 
-        void PacketManager::HandlePacket(const std::shared_ptr<ISession>& session, std::span<const uint8_t> rawPacketData)
+        void PacketManager::HandlePacket(const std::shared_ptr<ISession>& session, const std::vector<std::byte>& packet)
         {
-            if (!session || rawPacketData.empty())
-            {
-                LOG_ERROR("Attempted to handle null session or empty raw packet data.");
-                return;
-            }
-            flatbuffers::Verifier verifier(rawPacketData.data(), rawPacketData.size());
-            if(!Protocol::VerifyUnifiedPacketBuffer(verifier))
-            {
-                LOG_ERROR("Received invalid FlatBuffers UnifiedPacket buffer.");
-                return;
-            }
-            const Protocol::UnifiedPacket* packet = Protocol::GetUnifiedPacket(rawPacketData.data());
-
-            Protocol::PacketId id = packet->id();
-
-            auto it = m_handlers.find(id);
-            if (it == m_handlers.end())
-            {
-                LOG_WARN("No handler registered for PacketId: {}", static_cast<int>(id));
-                return;
-            }
             if (m_jobQueue)
             {
-                Utils::Job job;
-                job.session = session;
-                job.packetId = id;
-                job.packetBuffer.assign(rawPacketData.begin(), rawPacketData.end());
-                m_jobQueue->PushJob(std::move(job));
-                LOG_DEBUG("PacketId {} pushed to JobQueue.", static_cast<int>(id));
+                m_jobQueue->PushJob({ session, packet });
             }
             else
             {
-                LOG_ERROR("JobQueue is null in PacketManager. Cannot push packet job.");
+                LOG_ERROR("JobQueue is null in PacketManager.");
             }
         }
 

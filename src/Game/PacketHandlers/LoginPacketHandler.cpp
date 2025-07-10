@@ -31,18 +31,27 @@ namespace CppMMO
                 const std::string username = c_login_packet->id()->str();
                 LOG_INFO("[LoginPacketHandler] Processing login for user: '{}' from session: {}", username, session->GetRemoteEndpoint().address().to_string());
 
-                // TODO: Replace with real authentication logic
+                // TODO: Replace with real authentication logic (e.g., database lookup)
                 bool isAuthenticated = (username == "test_user");
+                uint64_t retrievedPlayerId = 0; // 실제 인증 시스템에서 가져올 플레이어 ID
 
                 flatbuffers::FlatBufferBuilder builder;
                 flatbuffers::Offset<void> s_login_offset;
 
                 if (isAuthenticated)
                 {
-                    LOG_INFO("[LoginPacketHandler] User '{}' authenticated successfully.", username);
-                    auto position = Protocol::Vec2(10.0f, 20.0f);
+                    // 임시로 하드코딩된 ID 사용. 실제로는 인증 시스템에서 가져와야 함.
+                    retrievedPlayerId = 12345L;
+                    LOG_INFO("[LoginPacketHandler] User '{}' authenticated successfully. PlayerId: {}", username, retrievedPlayerId);
+
+                    // 세션에 플레이어 ID 설정
+                    session->SetPlayerId(retrievedPlayerId);
+
+                    // TODO: Replace with actual player's last known position or spawn point
+                    auto position = Protocol::Vec2(10.0f, 20.0f); // 현재는 하드코딩된 위치
+
                     auto player_info_offset = Protocol::CreatePlayerInfo(builder,
-                                                                        12345L,
+                                                                        retrievedPlayerId, // 실제 플레이어 ID 사용
                                                                         builder.CreateString(username),
                                                                         &position,
                                                                         100,

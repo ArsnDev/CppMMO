@@ -42,7 +42,7 @@ namespace CppMMO
              *  @param session 패킷을 수신한 세션입니다.
              *  @param packet FlatBuffers를 통해 파싱된 최상위 패킷 객체입니다.
              */
-            virtual void HandlePacket(const std::shared_ptr<ISession>& session, std::span<const uint8_t> rawPacketData) = 0;
+            virtual void HandlePacket(const std::shared_ptr<ISession>& session, const std::vector<std::byte>& packet) = 0;
         
             virtual void DispatchPacket(Protocol::PacketId id, const std::shared_ptr<ISession>& session, const Protocol::UnifiedPacket* packet) = 0;
         };
