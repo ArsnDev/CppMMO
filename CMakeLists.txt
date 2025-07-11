@@ -6,6 +6,8 @@ project(CppMMO VERSION 1.0
                DESCRIPTION "My Cpp Project"
                LANGUAGES CXX)
 
+set_property(GLOBAL PROPERTY VS_UNICODE_OUTPUT_CONSOLE TRUE)
+
 # =========================[ 빌드 옵션 및 출력 경로 ]=========================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
