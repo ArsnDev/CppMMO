@@ -1,9 +1,0 @@
-1. `Game/GameCommand.h`:`const&` 사용: Vec2와 같은 작은 구조체는 값으로 전달해도 괜찮지만, 더 큰 객체라면 const&가 선호됩니다.
-2. `Game/GameLogicQueue.h` / `GameLogicQueue.cpp`: `const&` 사용: PushGameCommand에서 GameCommand를 값으로 전달하는 것은 std::move를 사용하므로 허용됩니다.
-3. `Game/Managers/ChatManager.h` / `ChatManager.cpp`: 싱글턴 패턴을 사용하고 있습니다. 테스트 및 의존성 주입을 어렵게 만들 수 있으므로 사용 목적이 명확해야 합니다. HandleRedisChatMessage에서 player_id가 하드코딩되어 있습니다.
-4. `Game/PacketHandlers/LoginPacketHandler.h` / `LoginPacketHandler.cpp`: `TODO: Replace with real authentication logic`: 현재 인증 로직은 개발용입니다. 
-실제 인증 로직으로 교체해야 합니다. session->SetPlayerId()` 누락: 인증 성공 후 LoginPacketHandler에서 session->SetPlayerId(retrievedPlayerId);를 호출하여 playerId를 ISession 객체와 연결해야 합니다. 이는
-JobProcessor가 나중에 playerId를 올바르게 가져오는 데 중요합니다.
-5. `Game/Services/RedisChatService.h` / `RedisChatService.cpp`: sw::redis++ 라이브러리의 스레드 안전성 고려가 필요하며, Subscriber는 단일 스레드에서 사용해야 합니다.
-6. `Utils/JobProcessor.h` / `JobProcessor.cpp`: `const&` 사용: shared_ptr 매개변수를 값으로 전달하는 것은 std::move를 허용하므로 허용됩니다. 잠재적 문제점: GameCommand의 commandId는 현재 0으로 임시 설정되어 있습니다. 클라이언트 요청 추적을 위해 필요하다면 protocol.fbs에 command_id 필드를 추가하는 것을 고려해야합니다.
-7. `Utils/JobQueue.h` / `JobQueue.cpp`: `const&` 사용: Job을 값으로 전달하는 것은 std::move를 허용하므로 허용됩니다.
