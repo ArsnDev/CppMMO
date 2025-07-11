@@ -19,6 +19,7 @@
 #include <mutex>
 #include <functional>
 #include <thread>
+#include <future>
 
 // ========================[ Boost 라이브러리 ]========================
 #include <boost/system/error_code.hpp>

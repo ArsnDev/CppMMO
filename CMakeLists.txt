@@ -46,6 +46,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Game/Models/Player.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
+    src/Game/Services/AuthService.cpp
     src/Game/Services/RedisChatService.cpp
     src/Game/GameLogicQueue.cpp
     src/Utils/JobProcessor.cpp
@@ -69,7 +70,7 @@ endif()
 # =========================[ 외부 라이브러리: Boost ]=========================
 # list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/external/boost_install")
 
-find_package(Boost REQUIRED COMPONENTS system thread program_options filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread program_options filesystem beast)
 
 if (Boost_FOUND)
     message(STATUS "Boost found. Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
@@ -77,6 +78,9 @@ if (Boost_FOUND)
 else()
     message(FATAL_ERROR "Boost not found at ${CMAKE_PREFIX_PATH}. Please ensure Boost is installed and CMAKE_PREFIX_PATH is set correctly.")
 endif()
+
+# =========================[ 외부 라이브러리: nlohmann/json ]=========================
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # =========================[ 외부 라이브러리: spdlog ]=========================
 include(FetchContent)
@@ -167,6 +171,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Boost::thread
     Boost::program_options
     Boost::filesystem
+    Boost::beast
+    nlohmann_json::nlohmann_json
 )
 if (VCPKG_TOOLCHAIN_FILE)
     vcpkg_copy_tool_dependencies(${PROJECT_NAME})

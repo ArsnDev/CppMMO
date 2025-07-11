@@ -41,7 +41,7 @@ enum PacketId : ushort {
 
 // C_Login: Client requests to login
 table C_Login {
-  id:string;
+  session_ticket:string;
   command_id:long;
 }
 
