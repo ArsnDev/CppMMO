@@ -57,7 +57,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 # =========================[ 컴파일러 경고 옵션 ]=========================
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_compile_options(/W4 /utf-8)
+        add_compile_options(/W4 /source-charset:utf-8 /execution-charset:utf-8)
     add_compile_definitions(
         _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
         _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
