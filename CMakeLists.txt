@@ -46,7 +46,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Game/Models/Player.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
-    src/Game/Services/AuthService.cpp
+    # src/Game/Services/AuthService.cpp
     src/Game/Services/RedisChatService.cpp
     src/Game/GameLogicQueue.cpp
     src/Utils/JobProcessor.cpp

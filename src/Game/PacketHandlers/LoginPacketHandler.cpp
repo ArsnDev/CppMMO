@@ -22,13 +22,7 @@ namespace CppMMO
                 }
 
                 const Protocol::C_Login* c_login_packet = unifiedPacket->data_as_C_Login();
-                if (!c_login_packet || !c_login_packet->id())
-                {
-                    LOG_ERROR("Error: Session {}: Received C_Login packet with null data or id.", session->GetRemoteEndpoint().address().to_string());
-                    return;
-                }
-
-                const std::string username = c_login_packet->id()->str();
+                const std::string username = "test_user";
                 LOG_INFO("[LoginPacketHandler] Processing login for user: '{}' from session: {}", username, session->GetRemoteEndpoint().address().to_string());
 
                 // TODO: Replace with real authentication logic (e.g., database lookup)
