@@ -20,21 +20,22 @@ enum PacketId : ushort {
   NONE = 0,
   // Login
   C_Login = 1,
-  S_Login = 2,
+  S_LoginSuccess = 2,
+  S_LoginFailure = 3,
   // Chat
-  C_Chat = 3,
-  S_Chat = 4,
+  C_Chat = 4,
+  S_Chat = 5,
   // Player Movement (2D game)
-  C_Move = 5,
-  S_PlayerMove = 6,
+  C_Move = 6,
+  S_PlayerMove = 7,
   // Zone System
-  C_ChangeZone = 7,
-  S_EnterZone = 8,
-  S_LeaveZone = 9,
-  S_PlayerEnterZone = 10,
-  S_PlayerLeaveZone = 11,
+  C_ChangeZone = 8,
+  S_EnterZone = 9,
+  S_LeaveZone = 10,
+  S_PlayerEnterZone = 11,
+  S_PlayerLeaveZone = 12,
   // Player Stats Update
-  S_PlayerHpUpdate = 12,
+  S_PlayerHpUpdate = 13,
 }
 
 // --- Packet Body Definitions ---
@@ -45,10 +46,16 @@ table C_Login {
   command_id:long;
 }
 
-// S_Login: Server responds to login request
-table S_Login {
-  success:bool;
+// S_LoginSuccess: Server responds to successful login request
+table S_LoginSuccess {
   player_info:PlayerInfo;
+  command_id:long;
+}
+
+// S_LoginFailure: Server responds to failed login request
+table S_LoginFailure {
+  error_code:int;
+  error_message:string;
   command_id:long;
 }
 
@@ -115,7 +122,8 @@ table S_PlayerLeaveZone {
 // Union to hold any possible packet data
 union Packet {
   C_Login,
-  S_Login,
+  S_LoginSuccess,
+  S_LoginFailure,
   C_Chat,
   S_Chat,
   C_Move,
