@@ -10,10 +10,11 @@
 #include "Game/PacketHandlers/LoginPacketHandler.h"
 #include "Game/PacketHandlers/ChatPacketHandler.h"
 #include "Game/Managers/ChatManager.h"
+#include "Game/Services/AuthService.h"
 #include <boost/program_options.hpp>
 #include "protocol_generated.h"
 
-using namespace CppMMO::Protocol;
+namespace asio = boost::asio; 
 
 namespace po = boost::program_options;
 
@@ -28,7 +29,9 @@ int main(int argc, char* argv[])
         ("help,h", "Print Help Message.")
         ("port,p", po::value<unsigned short>()->default_value(8080), "Set Server Port.")
         ("io-threads", po::value<int>()->default_value(2), "Set number of network I/O threads.")
-        ("logic-threads", po::value<int>()->default_value(4), "Set number of logic processing threads.");
+        ("logic-threads", po::value<int>()->default_value(4), "Set number of logic processing threads.")
+        ("auth-host", po::value<std::string>()->default_value("localhost"), "Auth server host (e.g., localhost, your-auth-server.com).")
+        ("auth-port", po::value<std::string>()->default_value("8080"), "Auth server port (e.g., 8080, 443).");
 
     po::variables_map vm;
     try
@@ -53,8 +56,11 @@ int main(int argc, char* argv[])
     unsigned short port = vm["port"].as<unsigned short>();
     int ioThreadCount = vm["io-threads"].as<int>();
     int logicThreadCount = vm["logic-threads"].as<int>();
+    std::string authHost = vm["auth-host"].as<std::string>();
+    std::string authPort = vm["auth-port"].as<std::string>();
 
     LOG_INFO("Server configured: Port={}, IO Threads={}, Logic Threads={}", port, ioThreadCount, logicThreadCount);
+    LOG_INFO("Auth Service configured: Host={}, Port={}", authHost, authPort);
 
     try
     {
@@ -66,12 +72,18 @@ int main(int argc, char* argv[])
         auto gameLogicQueue = std::make_shared<CppMMO::Game::GameLogicQueue>();
         auto jobProcessor = std::make_shared<CppMMO::Utils::JobProcessor>(jobQueue, packetManager, gameLogicQueue);
         auto gameManager = std::make_shared<CppMMO::Game::Managers::GameManager>(gameLogicQueue, sessionManager);
-        
+        auto authService = std::make_shared<CppMMO::Game::Services::AuthService>(io_context, authHost, authPort);
+
         jobProcessor->Start(logicThreadCount);
         gameManager->Start();
 
-        packetManager->RegisterHandler(PacketId_C_Login, CppMMO::Game::PacketHandlers::LoginPacketHandler());
-        packetManager->RegisterHandler(PacketId_C_Chat, CppMMO::Game::PacketHandlers::ChatPacketHandler());
+        auto loginHandlerInstance = std::make_shared<CppMMO::Game::PacketHandlers::LoginPacketHandler>(io_context, authService);
+        packetManager->RegisterHandler(CppMMO::Protocol::PacketId_C_Login,
+            [loginHandlerInstance](std::shared_ptr<CppMMO::Network::ISession> session, const CppMMO::Protocol::UnifiedPacket* unifiedPacket) {
+                (*loginHandlerInstance)(session, unifiedPacket); 
+            });
+        packetManager->RegisterHandler(CppMMO::Protocol::PacketId_C_Chat,
+                                      CppMMO::Game::PacketHandlers::ChatPacketHandler()); 
 
         auto server = std::make_shared<CppMMO::Network::TcpServer>(io_context, port, packetManager, sessionManager);
 

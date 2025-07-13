@@ -108,7 +108,8 @@ namespace CppMMO
             switch (packetId)
             {
                 case Protocol::PacketId_C_Login:
-                case Protocol::PacketId_S_Login:
+                case Protocol::PacketId_S_LoginSuccess:
+                case Protocol::PacketId_S_LoginFailure:
                 case Protocol::PacketId_C_Chat:
                 case Protocol::PacketId_S_Chat:
                     isNonGamePacket = true;
