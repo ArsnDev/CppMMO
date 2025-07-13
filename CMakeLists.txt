@@ -46,7 +46,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Game/Models/Player.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
-    # src/Game/Services/AuthService.cpp
     src/Game/Services/RedisChatService.cpp
     src/Game/GameLogicQueue.cpp
     src/Utils/JobProcessor.cpp
@@ -58,6 +57,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # =========================[ 컴파일러 경고 옵션 ]=========================
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         add_compile_options(/W4 /source-charset:utf-8 /execution-charset:utf-8)
+        target_compile_options(${PROJECT_NAME} PRIVATE /fsanitize=address)
     add_compile_definitions(
         _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
         _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
@@ -93,6 +93,13 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(spdlog_src)
+
+# spdlog 라이브러리에도 ASan 컴파일러 플래그 적용
+if (MSVC)
+    target_compile_options(spdlog PRIVATE /fsanitize=address)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(spdlog PRIVATE -fsanitize=address)
+endif()
 
 # =========================[ 외부 라이브러리: concurrentqueue ]=========================
 FetchContent_Declare(

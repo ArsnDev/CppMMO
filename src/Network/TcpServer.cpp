@@ -147,7 +147,7 @@ namespace CppMMO
             co_return;
         }
 
-        void TcpServer::OnSessionDisconnectedInternal(const std::shared_ptr<ISession>& session)
+        void TcpServer::OnSessionDisconnectedInternal(std::shared_ptr<ISession> session)
         {
             LOG_INFO("Session disconnected.");
             if (m_sessionManager && session)
