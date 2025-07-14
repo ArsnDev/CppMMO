@@ -46,8 +46,8 @@ namespace CppMMO
                     return false;
                 }
 
-                m_acceptor.listen(asio::socket_base::max_connections);
-                LOG_INFO("TcpServer started listening with backlog {}.", asio::socket_base::max_listen_connections);
+                m_acceptor.listen(128);
+                LOG_INFO("TcpServer started listening with backlog {}.", 128);
 
                 asio::co_spawn(m_ioContext, AcceptLoop(), asio::detached);
 
