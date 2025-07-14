@@ -32,13 +32,13 @@ namespace CppMMO
             {
                 m_req.version(11);
                 m_req.method(boost::beast::http::verb::post);
-                m_req.target("/verify");
+                m_req.target("/api/auth/verify");
                 m_req.set(boost::beast::http::field::host, m_host);
                 m_req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
                 m_req.set(boost::beast::http::field::content_type, "application/json");
 
                 nlohmann::json request_body;
-                request_body["session_ticket"] = sessionTicket;
+                request_body["SessionTicket"] = sessionTicket;
                 m_req.body() = request_body.dump();
                 m_req.prepare_payload();
 
@@ -155,13 +155,33 @@ namespace CppMMO
                             response.success = json_response["success"].get<bool>();
                             if (response.success)
                             {
-                                if (json_response.contains("playerId") && json_response["playerId"].is_number_unsigned())
+                                if (json_response.contains("playerInfo") && json_response["playerInfo"].is_object())
                                 {
-                                    response.playerId = json_response["playerId"].get<uint64_t>();
-                                }
-                                if (json_response.contains("username") && json_response["username"].is_string())
-                                {
-                                    response.username = json_response["username"].get<std::string>();
+                                    const auto& playerInfo = json_response["playerInfo"];
+                                    if (playerInfo.contains("playerId") && playerInfo["playerId"].is_number_unsigned())
+                                    {
+                                        response.playerId = playerInfo["playerId"].get<uint64_t>();
+                                    }
+                                    if (playerInfo.contains("name") && playerInfo["name"].is_string())
+                                    {
+                                        response.username = playerInfo["name"].get<std::string>();
+                                    }
+                                    if (playerInfo.contains("posX") && playerInfo["posX"].is_number())
+                                    {
+                                        response.posX = playerInfo["posX"].get<float>();
+                                    }
+                                    if (playerInfo.contains("posY") && playerInfo["posY"].is_number())
+                                    {
+                                        response.posY = playerInfo["posY"].get<float>();
+                                    }
+                                    if (playerInfo.contains("hp") && playerInfo["hp"].is_number_integer())
+                                    {
+                                        response.hp = playerInfo["hp"].get<int>();
+                                    }
+                                    if (playerInfo.contains("maxHp") && playerInfo["maxHp"].is_number_integer())
+                                    {
+                                        response.maxHp = playerInfo["maxHp"].get<int>();
+                                    }
                                 }
                                 LOG_INFO("AuthService::HttpRequestSession: AuthServer verification successful. PlayerId: {}, Username: {}", response.playerId, response.username);
                             }
@@ -194,11 +214,8 @@ namespace CppMMO
 
                         try {
                             nlohmann::json error_json = nlohmann::json::parse(m_res.body());
-                            if (error_json.contains("errorMessage") && error_json["errorMessage"].is_string()) {
-                                response.errorMessage += " - " + error_json["errorMessage"].get<std::string>();
-                            }
-                            if (error_json.contains("errorCode") && error_json["errorCode"].is_number_integer()) {
-                                response.errorCode = error_json["errorCode"].get<int>();
+                            if (error_json.contains("message") && error_json["message"].is_string()) {
+                                response.errorMessage += " - " + error_json["message"].get<std::string>();
                             }
                         } catch (const nlohmann::json::parse_error& e) {
                             LOG_WARN("AuthService::HttpRequestSession: Failed to parse error details from AuthServer response body: {}", e.what());

@@ -14,6 +14,10 @@ namespace CppMMO
                 bool success = false;
                 uint64_t playerId = 0;
                 std::string username;
+                float posX = 0.0f;
+                float posY = 0.0f;
+                int hp = 0;
+                int maxHp = 0;
                 std::string errorMessage;
                 int errorCode = 0;
             };

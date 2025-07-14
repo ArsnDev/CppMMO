@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
         ("io-threads", po::value<int>()->default_value(2), "Set number of network I/O threads.")
         ("logic-threads", po::value<int>()->default_value(4), "Set number of logic processing threads.")
         ("auth-host", po::value<std::string>()->default_value("localhost"), "Auth server host (e.g., localhost, your-auth-server.com).")
-        ("auth-port", po::value<std::string>()->default_value("8080"), "Auth server port (e.g., 8080, 443).");
+        ("auth-port", po::value<std::string>()->default_value("5278"), "Auth server port (e.g., 8080, 443).");
 
     po::variables_map vm;
     try

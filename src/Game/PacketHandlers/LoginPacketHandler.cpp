@@ -86,7 +86,7 @@ namespace CppMMO
                                                                                            s_login_success_offset.Union());
                                 builder.Finish(unified_packet_offset);
                                 session->Send(std::span<const std::byte>(reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), builder.GetSize()));
-                                LOG_INFO("--- LoginPacketHandler: Sent S_LoginSuccess for user '{}' ---", authResponse.username);
+                                LOG_INFO("--- LoginPacketHandler: Sent S_LoginSuccess ---");
                             }
                             else
                             {
