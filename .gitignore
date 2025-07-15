@@ -73,6 +73,9 @@ external/
 *_generated.cpp
 *.fbs.h # Common pattern for auto-generated FlatBuffers headers
 
+# Note: Protocol files in Test/Protocol/ are currently tracked for testing purposes
+# In production, these should be generated from .fbs files during build process
+
 # -------------------------------------------------------------
 # 6. Operating System Specific & Editor Files
 # -------------------------------------------------------------

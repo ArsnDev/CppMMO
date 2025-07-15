@@ -14,7 +14,7 @@ from datetime import datetime
 
 # --- FlatBuffers 모듈 임포트 설정 ---
 flatbuffers_module_base_path = os.path.abspath(os.path.dirname(__file__))
-flatbuffers_module_path = os.path.join(flatbuffers_module_base_path, 'Protocol', 'CppMMO', 'Protocol')
+flatbuffers_module_path = os.path.join(flatbuffers_module_base_path, 'Protocol')
 
 if flatbuffers_module_path not in sys.path:
     sys.path.append(flatbuffers_module_path)
