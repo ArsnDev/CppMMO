@@ -30,10 +30,14 @@ namespace CppMMO
                 }
 
                 const std::string chat_message = c_chat_packet->message()->str();
-                LOG_INFO("[ChatPacketHandler] Processing chat message: '{}' from session: {}", chat_message, session->GetRemoteEndpoint().address().to_string());
+                const int64_t player_id = session->GetSessionId(); // Use session ID as player ID
+                LOG_INFO("[ChatPacketHandler] Processing chat message: '{}' from player: {} (session: {})", chat_message, player_id, session->GetRemoteEndpoint().address().to_string());
 
+                // Create message with player ID for Redis
+                std::string message_with_player = std::to_string(player_id) + "|" + chat_message;
+                
                 // Publish the chat message to Redis
-                Services::RedisChatService::GetInstance().Publish("chat_channel", chat_message);
+                Services::RedisChatService::GetInstance().Publish("chat_channel", message_with_player);
 
                 LOG_INFO("--- ChatPacketHandler: Finished processing chat message '{}' ---", chat_message);
             }

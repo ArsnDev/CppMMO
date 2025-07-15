@@ -69,11 +69,31 @@ namespace CppMMO
             {
                 LOG_DEBUG("ChatManager: Received Redis message on channel \'{}\': {}.", channel, message);
 
+                // Parse player ID from message (format: "player_id|message")
+                std::size_t delimiter_pos = message.find('|');
+                if (delimiter_pos == std::string::npos)
+                {
+                    LOG_ERROR("ChatManager: Invalid message format received: {}", message);
+                    return;
+                }
+
+                int64_t player_id = 0;
+                std::string chat_message;
+                try
+                {
+                    player_id = std::stoll(message.substr(0, delimiter_pos));
+                    chat_message = message.substr(delimiter_pos + 1);
+                }
+                catch (const std::exception& e)
+                {
+                    LOG_ERROR("ChatManager: Failed to parse player ID from message: {} - Error: {}", message, e.what());
+                    return;
+                }
+
                 // Create S_Chat packet
                 flatbuffers::FlatBufferBuilder builder;
-                auto chat_message_offset = builder.CreateString(message);
-                // Assuming player_id 0 for server broadcast, or you can parse it from the message if included
-                auto s_chat_packet = Protocol::CreateS_Chat(builder, 0, chat_message_offset);
+                auto chat_message_offset = builder.CreateString(chat_message);
+                auto s_chat_packet = Protocol::CreateS_Chat(builder, player_id, chat_message_offset);
                 auto unified_packet_offset = Protocol::CreateUnifiedPacket(builder, Protocol::PacketId_S_Chat, Protocol::Packet_S_Chat, s_chat_packet.Union());
                 builder.Finish(unified_packet_offset);
 
@@ -85,7 +105,7 @@ namespace CppMMO
                 {
                     pair.second->Send(send_buffer);
                 }
-                LOG_INFO("ChatManager: Broadcasted chat message to {} sessions.", m_connectedSessions.size());
+                LOG_INFO("ChatManager: Broadcasted chat message from player {} to {} sessions: '{}'", player_id, m_connectedSessions.size(), chat_message);
             }
 
             void ChatManager::OnSessionConnected(std::shared_ptr<Network::ISession> session)
