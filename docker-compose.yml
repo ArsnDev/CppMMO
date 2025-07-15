@@ -1,0 +1,77 @@
+# 'version' 필드는 최신 Docker Compose CLI에서 더 이상 필요 없으며, 제거하여 경고를 피합니다.
+
+services:
+  # Redis 데이터베이스 서비스
+  redis:
+    image: redis:alpine # 경량 Redis 이미지 사용
+    container_name: redis
+    ports:
+      - "6379:6379" # 호스트의 6379 포트와 컨테이너의 6379 포트를 연결
+    networks:
+      - mmo_network # mmo_network에 연결
+
+  # AuthServer (인증 서버) 서비스
+  authserver:
+    build:
+      context: ./auth # auth 폴더에서 Dockerfile 빌드
+      dockerfile: Dockerfile
+    container_name: authserver
+    ports:
+      - "5278:5278" # 호스트의 5278 포트와 컨테이너의 5278 포트를 연결
+    environment: # 환경 변수 설정
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5278
+      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__MySql=Server=mysql;Database=auth_db;Uid=root;Pwd=rootpassword;
+    depends_on:
+      - redis # Redis가 먼저 시작되도록 의존성 설정
+      - mysql # MySQL도 의존성으로 추가
+    networks:
+      - mmo_network # mmo_network에 연결
+
+  # MySQL 데이터베이스 서비스
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: LocalUser
+      MYSQL_PASSWORD: localuser
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mmo_network
+
+  # CppMMO Server (메인 C++ 게임 서버) 서비스
+  cppmmo_server:
+    build:
+      context: . # 현재 디렉토리에서 Dockerfile 빌드
+      dockerfile: Dockerfile
+    container_name: cppmmo_server
+    ports:
+      - "8080:8080" # 게임 서버 포트
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AUTH_HOST=authserver
+      - AUTH_PORT=5278
+    depends_on:
+      - authserver # AuthServer가 먼저 시작되도록 의존성 설정
+      - redis # Redis 의존성
+    networks:
+      - mmo_network # mmo_network에 연결
+    command: ["./CppMMO_Deployment", "--port", "8080", "--auth-host", "authserver", "--auth-port", "5278"]
+    volumes:
+      - "./logs:/app/logs" # 로그 디렉토리 마운트
+
+# 서비스 간 통신을 위한 사용자 정의 네트워크
+networks:
+  mmo_network:
+    driver: bridge # 브릿지 네트워크 타입 사용
+
+# 데이터 영속성을 위한 볼륨
+volumes:
+  mysql_data:

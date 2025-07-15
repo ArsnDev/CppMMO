@@ -2,6 +2,7 @@
 #include "ChatManager.h"
 #include "Utils/Logger.h"
 #include "protocol_generated.h"
+#include <cstdlib>
 
 namespace CppMMO
 {
@@ -34,7 +35,16 @@ namespace CppMMO
                     OnSessionDisconnected(session);
                 });
 
-                if (!Services::RedisChatService::GetInstance().Connect("tcp://127.0.0.1:6379"))
+                // Redis 호스트를 환경변수에서 가져오거나 기본값 사용
+                const char* redisHost = std::getenv("REDIS_HOST");
+                const char* redisPort = std::getenv("REDIS_PORT");
+                std::string redisUrl = "tcp://";
+                redisUrl += (redisHost ? redisHost : "127.0.0.1");
+                redisUrl += ":";
+                redisUrl += (redisPort ? redisPort : "6379");
+                
+                LOG_INFO("ChatManager: Attempting to connect to Redis at {}", redisUrl);
+                if (!Services::RedisChatService::GetInstance().Connect(redisUrl))
                 {
                     LOG_ERROR("ChatManager: Failed to connect to Redis.");
                     return;
@@ -81,15 +91,15 @@ namespace CppMMO
             void ChatManager::OnSessionConnected(std::shared_ptr<Network::ISession> session)
             {
                 std::lock_guard<std::mutex> lock(m_sessionsMutex);
-                m_connectedSessions[session->GetRemoteEndpoint().address().to_string()] = session;
-                LOG_INFO("ChatManager: Session connected: {}. Total sessions: {}", session->GetRemoteEndpoint().address().to_string(), m_connectedSessions.size());
+                m_connectedSessions[std::to_string(session->GetSessionId())] = session;
+                LOG_INFO("ChatManager: Session connected: {} (ID: {}). Total sessions: {}", session->GetRemoteEndpoint().address().to_string(), session->GetSessionId(), m_connectedSessions.size());
             }
 
             void ChatManager::OnSessionDisconnected(std::shared_ptr<Network::ISession> session)
             {
                 std::lock_guard<std::mutex> lock(m_sessionsMutex);
-                m_connectedSessions.erase(session->GetRemoteEndpoint().address().to_string());
-                LOG_INFO("ChatManager: Session disconnected: {}. Total sessions: {}", session->GetRemoteEndpoint().address().to_string(), m_connectedSessions.size());
+                m_connectedSessions.erase(std::to_string(session->GetSessionId()));
+                LOG_INFO("ChatManager: Session disconnected: {} (ID: {}). Total sessions: {}", session->GetRemoteEndpoint().address().to_string(), session->GetSessionId(), m_connectedSessions.size());
             }
         }
     }

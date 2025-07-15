@@ -82,8 +82,11 @@ int main(int argc, char* argv[])
             [loginHandlerInstance](std::shared_ptr<CppMMO::Network::ISession> session, const CppMMO::Protocol::UnifiedPacket* unifiedPacket) {
                 (*loginHandlerInstance)(session, unifiedPacket); 
             });
+        auto chatHandlerInstance = std::make_shared<CppMMO::Game::PacketHandlers::ChatPacketHandler>();
         packetManager->RegisterHandler(CppMMO::Protocol::PacketId_C_Chat,
-                                      CppMMO::Game::PacketHandlers::ChatPacketHandler()); 
+            [chatHandlerInstance](std::shared_ptr<CppMMO::Network::ISession> session, const CppMMO::Protocol::UnifiedPacket* unifiedPacket) {
+                (*chatHandlerInstance)(session, unifiedPacket);
+            }); 
 
         auto server = std::make_shared<CppMMO::Network::TcpServer>(io_context, port, packetManager, sessionManager);
 

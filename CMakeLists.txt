@@ -1,42 +1,34 @@
-﻿cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_TOOLCHAIN_FILE "C:/Users/clums/Desktop/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "Vcpkg toolchain file")
-
-project(CppMMO VERSION 1.0
-               DESCRIPTION "My Cpp Project"
+project(CppMMO_Deployment VERSION 1.0
+               DESCRIPTION "CppMMO Deployment Server"
                LANGUAGES CXX)
 
-set_property(GLOBAL PROPERTY VS_UNICODE_OUTPUT_CONSOLE TRUE)
-
-# =========================[ 빌드 옵션 및 출력 경로 ]=========================
+# C++ 표준 설정
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0077 NEW)
-cmake_policy(SET CMP0167 NEW)
+# 빌드 출력 디렉토리 설정
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-
-
-# =========================[ 실행 파일 및 소스 파일 ]=========================
+# 실행 파일 생성
 add_executable(${PROJECT_NAME})
 
+# 컴파일러별 옵션
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_precompile_headers(${PROJECT_NAME} PRIVATE
-        "${CMAKE_SOURCE_DIR}/src/pch.h"
-    )
-    target_sources(${PROJECT_NAME} PRIVATE
-        src/pch.cpp
-    )
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /bigobj)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    # 이 프로젝트는 일단 MSVC만 지원함 필요하다면 아래 주석을 해지할것.
-    # target_precompile_headers(${PROJECT_NAME} PRIVATE pch.h)
-    # target_sources(${PROJECT_NAME} PRIVATE src/pch.cpp)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# 소스 파일 추가
 target_sources(${PROJECT_NAME} PRIVATE
-    src/main.cpp    
+    src/main.cpp
+    src/pch.cpp
     src/Network/PacketManager.cpp
     src/Network/Session.cpp
     src/Network/SessionManager.cpp
@@ -44,6 +36,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Game/Managers/ChatManager.cpp
     src/Game/Managers/GameManager.cpp
     src/Game/Models/Player.cpp
+    src/Game/Models/World.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
     src/Game/Services/AuthService.cpp
@@ -52,159 +45,129 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Utils/JobProcessor.cpp
     src/Utils/JobQueue.cpp
     src/Utils/Logger.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
 )
 
-# =========================[ 컴파일러 경고 옵션 ]=========================
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        add_compile_options(/W4 /source-charset:utf-8 /execution-charset:utf-8)
-        target_compile_options(${PROJECT_NAME} PRIVATE /fsanitize=address)
-    add_compile_definitions(
-        _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
-        _CRT_SECURE_NO_WARNINGS # C4996과 관련된 다른 일반적인 경고도 억제
-        _WIN32_WINNT=0x0A00
-    )
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# =========================[ 외부 라이브러리: Boost ]=========================
-# list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/external/boost_install")
-
-find_package(Boost REQUIRED COMPONENTS system thread program_options filesystem beast)
-
-if (Boost_FOUND)
-    message(STATUS "Boost found. Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-    message(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
-else()
-    message(FATAL_ERROR "Boost not found at ${CMAKE_PREFIX_PATH}. Please ensure Boost is installed and CMAKE_PREFIX_PATH is set correctly.")
-endif()
-
-# =========================[ 외부 라이브러리: nlohmann/json ]=========================
-find_package(nlohmann_json CONFIG REQUIRED)
-
-# =========================[ 외부 라이브러리: spdlog ]=========================
-include(FetchContent)
-
-FetchContent_Declare(
-    spdlog_src
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.13.0
-    GIT_SHALLOW TRUE
-)
-
-FetchContent_MakeAvailable(spdlog_src)
-
-# spdlog 라이브러리에도 ASan 컴파일러 플래그 적용
-if (MSVC)
-    target_compile_options(spdlog PRIVATE /fsanitize=address)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(spdlog PRIVATE -fsanitize=address)
-endif()
-
-# =========================[ 외부 라이브러리: concurrentqueue ]=========================
-FetchContent_Declare(
-    concurrentqueue_src
-    GIT_REPOSITORY https://github.com/cameron314/concurrentqueue.git
-    GIT_TAG master
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(concurrentqueue_src)
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${concurrentqueue_src_SOURCE_DIR}
-)
-
-# =========================[ 외부 라이브러리: redis-plus-plus ]=========================
-find_package(redis++ CONFIG REQUIRED)
-
-# =========================[ 외부 라이브러리: FlatBuffers ]==========================
-FetchContent_Declare(
-    flatbuffers_src
-    GIT_REPOSITORY https://github.com/google/flatbuffers.git
-    GIT_TAG v24.3.25
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(flatbuffers_src)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
-
-FetchContent_GetProperties(flatbuffers_src)
-
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/src/Common")
-
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
-    COMMAND $<TARGET_FILE:flatc>
-            --cpp
-            --gen-object-api
-            -o "${CMAKE_CURRENT_BINARY_DIR}/src/Common/"
-            -I "${CMAKE_SOURCE_DIR}/src/Common/"
-            "${CMAKE_SOURCE_DIR}/src/Common/protocol.fbs"
-    DEPENDS ${CMAKE_SOURCE_DIR}/src/Common/protocol.fbs
-            flatc
-    COMMENT "Generating FlatBuffers C++ code from protocol.fbs"
-)
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/src/Common
-)
-
-add_custom_target(generate_protocol_fbs
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/Common/protocol_generated.h
-)
-
-add_dependencies(generate_protocol_fbs flatc)
-add_dependencies(${PROJECT_NAME} generate_protocol_fbs)
-
-# =========================[ 헤더 파일 포함 경로 ]=========================
+# 헤더 디렉토리 설정
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/Utils
-    ${CMAKE_SOURCE_DIR}/src/Network
-    ${CMAKE_SOURCE_DIR}/src/Game
-    ${CMAKE_SOURCE_DIR}/src/Game/Interfaces
-    ${CMAKE_SOURCE_DIR}/src/Game/Managers
-    ${CMAKE_SOURCE_DIR}/src/Game/Models
-    ${CMAKE_SOURCE_DIR}/src/Game/PacketHandlers
-    ${CMAKE_SOURCE_DIR}/src/Game/Services
+    ${CMAKE_SOURCE_DIR}/src/Common
 )
 
-# =========================[ 라이브러리 링크 ]=========================
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    spdlog
-    redis++::redis++
-    flatbuffers
-    Boost::system
-    Boost::thread
-    Boost::program_options
-    Boost::filesystem
-    Boost::beast
-    nlohmann_json::nlohmann_json
-)
-if (VCPKG_TOOLCHAIN_FILE)
-    vcpkg_copy_tool_dependencies(${PROJECT_NAME})
+# 외부 라이브러리 찾기
+find_package(Boost REQUIRED COMPONENTS system program_options)
+find_package(Threads REQUIRED)
+find_package(PkgConfig QUIET)
+
+# spdlog 
+find_package(spdlog QUIET)
+if(NOT spdlog_FOUND)
+    find_path(SPDLOG_INCLUDE_DIR spdlog/spdlog.h)
+    find_library(SPDLOG_LIB spdlog)
 endif()
 
-# =========================[ Doxygen 문서화 ]=========================
-find_package(Doxygen QUIET)
+# FlatBuffers
+find_package(Flatbuffers QUIET)
+if(NOT Flatbuffers_FOUND)
+    find_path(FLATBUFFERS_INCLUDE_DIR flatbuffers/flatbuffers.h)
+    find_library(FLATBUFFERS_LIB flatbuffers)
+endif()
 
-if(DOXYGEN_FOUND)
-    message(STATUS "Doxygen found. Generating documentation.")
+# Redis++
+find_library(REDISPP_LIB redis++)
+find_library(HIREDIS_LIB hiredis)
 
-    add_custom_command(
-        OUTPUT ${CMAKE_SOURCE_DIR}/docs/doxygen/html/index.html
-        COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM
-    )
+# nlohmann-json
+find_package(nlohmann_json QUIET)
+if(NOT nlohmann_json_FOUND)
+    find_path(NLOHMANN_JSON_INCLUDE_DIR nlohmann/json.hpp)
+endif()
 
-    add_custom_target(doc ALL
-        DEPENDS ${CMAKE_SOURCE_DIR}/docs/doxygen/html/index.html
-        COMMENT "Builds the Doxygen documentation"
-    )
-    
-else()
-    message(WARNING "Doxygen not found. API documentation will not be generated. Please install Doxygen and Graphviz.")
+# concurrentqueue 헤더
+find_path(CONCURRENTQUEUE_INCLUDE_DIR concurrentqueue.h)
+
+# Include 디렉토리 추가
+if(SPDLOG_INCLUDE_DIR)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${SPDLOG_INCLUDE_DIR})
+endif()
+
+if(FLATBUFFERS_INCLUDE_DIR)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${FLATBUFFERS_INCLUDE_DIR})
+endif()
+
+if(NLOHMANN_JSON_INCLUDE_DIR)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR})
+endif()
+
+if(CONCURRENTQUEUE_INCLUDE_DIR)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CONCURRENTQUEUE_INCLUDE_DIR})
+endif()
+
+# 라이브러리 링크 (의존성 순서 중요)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Boost::system
+    Boost::program_options
+    Threads::Threads
+)
+
+# Redis++ 라이브러리 (hiredis보다 먼저)
+if(REDISPP_LIB)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${REDISPP_LIB})
+endif()
+
+if(HIREDIS_LIB)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${HIREDIS_LIB})
+endif()
+
+# spdlog 라이브러리
+if(spdlog_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+elseif(SPDLOG_LIB)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${SPDLOG_LIB})
+endif()
+
+# FlatBuffers 라이브러리
+if(Flatbuffers_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers::flatbuffers)
+elseif(FLATBUFFERS_LIB)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${FLATBUFFERS_LIB})
+endif()
+
+# nlohmann-json 라이브러리
+if(nlohmann_json_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+endif()
+
+# 플랫폼별 추가 링크 라이브러리
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32 wsock32)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
+endif()
+
+# 빌드 정보 출력
+message(STATUS "Project: ${PROJECT_NAME}")
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Boost Version: ${Boost_VERSION}")
+
+if(spdlog_FOUND OR SPDLOG_LIB)
+    message(STATUS "spdlog: Found")
+endif()
+
+if(Flatbuffers_FOUND OR FLATBUFFERS_LIB)
+    message(STATUS "FlatBuffers: Found")
+endif()
+
+if(REDISPP_LIB)
+    message(STATUS "Redis++: Found")
+endif()
+
+if(CONCURRENTQUEUE_INCLUDE_DIR)
+    message(STATUS "concurrentqueue: Found")
+endif()
+
+if(nlohmann_json_FOUND OR NLOHMANN_JSON_INCLUDE_DIR)
+    message(STATUS "nlohmann-json: Found")
 endif()

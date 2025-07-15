@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "PacketManager.h"
-#include "JobProcessor.h"
-#include "JobQueue.h"
+#include "Utils/JobProcessor.h"
+#include "Utils/JobQueue.h"
 
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;

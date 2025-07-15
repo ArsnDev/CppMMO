@@ -20,6 +20,7 @@
 #include <functional>
 #include <thread>
 #include <future>
+#include <coroutine>
 
 // ========================[ Boost 라이브러리 ]========================
 #include <boost/system/error_code.hpp>
@@ -42,7 +43,8 @@
 #include "Utils/Logger.h"
 
 // ========================[ Redis++ 라이브러리 ]========================
-#include <sw/redis++/redis++.h>
+// Redis++ 헤더는 개별 파일에서 필요시 include
+// #include <sw/redis++/redis++.h>
 
 // ========================[ FlatBuffers 라이브러리 ]========================
 #include <flatbuffers/flatbuffers.h>

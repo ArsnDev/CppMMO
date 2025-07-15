@@ -1,7 +1,9 @@
 #pragma once
 
 #include "pch.h"
-#include <boost/beast.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
 
 namespace CppMMO
 {
