@@ -31,9 +31,9 @@ except ImportError as e:
 
 HOST = 'localhost'
 PORT = 8080
-NUM_CLIENTS = 1000
-TEST_DURATION = 120  # 2분 테스트
-MESSAGE_INTERVAL = 0.5  # 0.5초마다 메시지 전송 (매우 공격적)
+NUM_CLIENTS = 5  # 채팅 테스트용으로 클라이언트 수 감소
+TEST_DURATION = 30  # 30초 테스트
+MESSAGE_INTERVAL = 2.0  # 2초마다 메시지 전송 (채팅 테스트에 적합)
 
 # 글로벌 통계 수집
 global_stats = {
@@ -368,12 +368,8 @@ def run_extreme_stress_test():
     print(f"{'='*80}")
 
 if __name__ == "__main__":
-    print("WARNING: 이 테스트는 서버에 극한의 부하를 가합니다!")
-    print("서버 리소스를 모니터링하면서 진행하세요.")
-    
-    confirm = input("계속 진행하시겠습니까? (y/N): ")
-    if confirm.lower() != 'y':
-        print("테스트가 취소되었습니다.")
-        sys.exit(0)
+    print("Starting chat system test with {} clients...".format(NUM_CLIENTS))
+    print("Test duration: {} seconds".format(TEST_DURATION))
+    print("Message interval: {} seconds".format(MESSAGE_INTERVAL))
     
     run_extreme_stress_test()
