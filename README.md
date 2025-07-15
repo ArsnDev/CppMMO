@@ -61,19 +61,35 @@ C++20, Boost.Asio, 그리고 FlatBuffers를 기반으로 제작된 고성능 최
                                                      ^
                                                      | (Job 팝)
                                                      |
+                                             +------------------+
+                                             |    JobProcessor  |
+                                             | (패킷 분류 및   |
+                                             |  게임 커맨드 푸시)|
+                                             +--------+---------+
+                                                      |
+                                                      | (게임 커맨드 푸시)
+                                                      v
+                                             +------------------+
+                                             | GameLogicQueue   |
+                                             +------------------+
+                                                      ^
+                                                      | (게임 커맨드 팝)
+                                                      |
 +-----------+      +-----------------+      +------------------+
-|   Redis   |<---->| RedisChatService|<---->|  JobProcessor    |
-+-----------+      +-----------------+      | (로직 스레드)    |
+|   Redis   |<---->| RedisChatService|<---->|    GameManager   |
++-----------+      +-----------------+      | (게임 로직 처리) |
                                              +------------------+
 ```
 
 ### 핵심 컴포넌트
 
 1.  **TcpServer (I/O 스레드):** 전용 스레드 풀을 사용하여 클라이언트 연결을 관리하고 원시 네트워크 I/O를 처리합니다.
-2.  **PacketManager:** 클라이언트로부터 받은 데이터를 검증하고, 로직 스레드에서 처리할 수 있도록 `Job` 형태로 감쌉니다.
+2.  **PacketManager:** 클라이언트로부터 받은 데이터를 검증하고, `Job` 형태로 감싸 `JobQueue`에 푸시합니다.
 3.  **JobQueue:** I/O 스레드와 로직 스레드를 분리하는 스레드 안전 큐(`moodycamel::ConcurrentQueue`)입니다.
-4.  **JobProcessor (로직 스레드):** 별도의 스레드 풀을 사용하여 `JobQueue`에서 작업을 가져와 해당 `PacketHandler`를 실행함으로써 실제 게임 로직을 처리합니다.
-5.  **RedisChatService:** Redis 서버와 상호작용하여 채팅 시스템을 위한 Pub/Sub 기능을 수행합니다.
+4.  **JobProcessor (패킷 처리 스레드):** 별도의 스레드 풀을 사용하여 `JobQueue`에서 작업을 가져와 처리합니다. 일반 패킷은 `PacketHandler`를 통해 처리하고, 게임 로직과 관련된 커맨드는 `GameLogicQueue`에 푸시합니다.
+5.  **GameLogicQueue:** `JobProcessor`로부터 받은 게임 커맨드를 `GameManager`가 처리할 수 있도록 전달하는 스레드 안전 큐입니다.
+6.  **GameManager (게임 로직 스레드):** `GameLogicQueue`에서 게임 커맨드를 가져와 실제 게임 로직(플레이어 이동, HP 업데이트, 존 변경 등)을 처리합니다.
+7.  **RedisChatService:** Redis 서버와 상호작용하여 채팅 시스템을 위한 Pub/Sub 기능을 수행합니다.
 
 ## 🛠️ 시작하기
 

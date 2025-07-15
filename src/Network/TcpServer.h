@@ -34,8 +34,8 @@ namespace CppMMO
             std::shared_ptr<IPacketManager> m_packetManager;
             std::shared_ptr<ISessionManager> m_sessionManager;
 
-            std::function<void(std::shared_ptr<ISession>)> m_onSessionConnected;
-            std::function<void(std::shared_ptr<ISession>)> m_onSessionDisconnected;
+            std::function<void(std::shared_ptr<ISession>)> m_onSessionConnected{};
+            std::function<void(std::shared_ptr<ISession>)> m_onSessionDisconnected{};
 
             std::vector<std::thread> m_workerThreads;
             asio::signal_set m_signals;

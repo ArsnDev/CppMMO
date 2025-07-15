@@ -25,7 +25,7 @@ namespace CppMMO
             std::shared_ptr<Network::IPacketManager> m_packetManager;
             std::shared_ptr<Game::GameLogicQueue> m_gameLogicQueue;
 
-            std::vector<std::thread> m_workerThreads;
+            std::vector<std::thread> m_workerThreads{};
             std::atomic<bool> m_running = false;
 
             void WorkerLoop();

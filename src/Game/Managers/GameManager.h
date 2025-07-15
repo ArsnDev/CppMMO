@@ -22,7 +22,7 @@ namespace CppMMO
                 std::shared_ptr<GameLogicQueue> m_gameLogicQueue;
                 std::shared_ptr<Network::ISessionManager> m_sessionManager;
 
-                std::thread m_gameLoopThread;
+                std::thread m_gameLoopThread{};
                 std::atomic<bool> m_running = false;
 
                 void GameLoop();

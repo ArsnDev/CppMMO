@@ -8,26 +8,26 @@ namespace CppMMO
     {
         struct Vec2
         {
-            float x;
-            float y;
+            float x = 0.0f;
+            float y = 0.0f;
         };
 
         struct MoveCommandData
         {
-            uint64_t entityId;
-            Vec2 targetPosition;
+            uint64_t entityId = 0;
+            Vec2 targetPosition{};
         };
 
         struct PlayerHpUpdateCommandData
         {
-            uint64_t playerId;
-            int currentHp;
+            uint64_t playerId = 0;
+            int currentHp = 0;
         };
 
         struct ChangeZoneCommandData
         {
-            uint64_t playerId;
-            int targetZoneId;
+            uint64_t playerId = 0;
+            int targetZoneId = 0;
         };
 
         using GameCommandPayload = std::variant<MoveCommandData,
@@ -36,9 +36,9 @@ namespace CppMMO
                                                 >;
         struct GameCommand
         {
-            int64_t commandId;
-            GameCommandPayload payload;
-            int64_t senderSessionId;
+            int64_t commandId = 0;
+            GameCommandPayload payload{};
+            int64_t senderSessionId = 0;
         };
     }
 }

@@ -23,7 +23,7 @@ namespace CppMMO
             virtual void HandlePacket(const std::shared_ptr<ISession>& session, const std::vector<std::byte>& packet) override;
             virtual void DispatchPacket(Protocol::PacketId id, const std::shared_ptr<ISession>& session, const Protocol::UnifiedPacket* packet) override;
         private:
-            std::unordered_map<PacketId, PacketHandler> m_handlers;
+            std::unordered_map<PacketId, PacketHandler> m_handlers{};
             std::shared_ptr<Utils::JobQueue> m_jobQueue;
         };
     }

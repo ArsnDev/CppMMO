@@ -45,7 +45,7 @@ namespace CppMMO
             // std::chrono::steady_clock::time_point m_readDeadline;
             // std::chrono::steady_clock::time_point m_writeDeadline;
             
-            std::function<void(std::shared_ptr<ISession>)> m_onDisconnectedCallback;
+            std::function<void(std::shared_ptr<ISession>)> m_onDisconnectedCallback{};
             
             asio::awaitable<void> ReadLoop();
             asio::awaitable<void> WriteLoop();

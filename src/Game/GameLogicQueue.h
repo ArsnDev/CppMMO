@@ -16,9 +16,9 @@ namespace CppMMO
             void Shutdown();
             bool IsShuttingDown() const {return m_shuttingDown.load(std::memory_order_acquire);}
         private:
-            moodycamel::ConcurrentQueue<GameCommand> m_gameCommandQueue;
-            mutable std::mutex m_mutex;
-            std::condition_variable m_condition;
+            moodycamel::ConcurrentQueue<GameCommand> m_gameCommandQueue{};
+            mutable std::mutex m_mutex{};
+            std::condition_variable m_condition{};
             std::atomic<bool> m_shuttingDown = false;
         };
     }
