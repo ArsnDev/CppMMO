@@ -28,5 +28,19 @@ namespace CppMMO
             }
             return nullptr;
         }
+
+        std::vector<std::shared_ptr<ISession>> SessionManager::GetAllSessions() const
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            std::vector<std::shared_ptr<ISession>> sessions;
+            sessions.reserve(m_activeSessions.size());
+            
+            for (const auto& [sessionId, session] : m_activeSessions)
+            {
+                sessions.push_back(session);
+            }
+            
+            return sessions;
+        }
     }
 }

@@ -17,6 +17,7 @@ namespace CppMMO
             virtual void AddSession(std::shared_ptr<ISession> session) override;
             virtual void RemoveSession(uint64_t sessionId) override;
             virtual std::shared_ptr<ISession> GetSession(uint64_t sessionId) const override;
+            virtual std::vector<std::shared_ptr<ISession>> GetAllSessions() const override;
         private:
             mutable std::mutex m_mutex;
             std::unordered_map<uint64_t, std::shared_ptr<ISession>> m_activeSessions;

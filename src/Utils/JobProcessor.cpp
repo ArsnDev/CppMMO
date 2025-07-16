@@ -54,7 +54,7 @@ namespace CppMMO
             }
             for (size_t i = 0; i < m_workerThreads.size(); ++i)
             {
-                m_jobQueue->PushJob({ .isShutdownSignal = true});
+                m_jobQueue->PushJob({nullptr, {}, true});
             }
             for (std::thread& thread : m_workerThreads)
             {
@@ -85,13 +85,31 @@ namespace CppMMO
                         LOG_ERROR("Received empty packet buffer in worker thread.");
                         continue;
                     }
-                    flatbuffers::Verifier verifier(reinterpret_cast<const uint8_t*>(job.packetBuffer.data()), job.packetBuffer.size());
+                    
+                    // 패킷 데이터 처리 - 필요시 헤더 제거
+                    const uint8_t* packetData = reinterpret_cast<const uint8_t*>(job.packetBuffer.data());
+                    size_t packetSize = job.packetBuffer.size();
+                    
+                    LOG_DEBUG("JobProcessor: Processing packet size={}, Session: {}", 
+                             packetSize, job.session->GetSessionId());
+                    
+                    // 일관된 패킷 처리: Session에서 이미 4바이트 헤더를 제거했으므로 순수 FlatBuffers 데이터
+                    LOG_DEBUG("Processing FlatBuffers packet of size: {}", packetSize);
+                    
+                    flatbuffers::Verifier verifier(packetData, packetSize);
                     if(!Protocol::VerifyUnifiedPacketBuffer(verifier))
                     {
-                        LOG_ERROR("Received invalid FlatBuffers UnifiedPacket in worker thread.");
+                        LOG_ERROR("Received invalid FlatBuffers UnifiedPacket in worker thread. Buffer size: {}, Session: {}", 
+                                 packetSize, job.session->GetSessionId());
+                        // 첫 16바이트 출력 (디버깅용)
+                        std::string hexDump;
+                        for(size_t i = 0; i < std::min(packetSize, size_t(16)); ++i) {
+                            hexDump += fmt::format("{:02x} ", static_cast<unsigned char>(packetData[i]));
+                        }
+                        LOG_ERROR("Packet hex dump (first 16 bytes): {}", hexDump);
                         continue;
                     }
-                    const Protocol::UnifiedPacket* unifiedPacket = Protocol::GetUnifiedPacket(job.packetBuffer.data());
+                    const Protocol::UnifiedPacket* unifiedPacket = Protocol::GetUnifiedPacket(packetData);
                     ProcessJobPacket(job, unifiedPacket);
                 }
                 catch(const std::exception& e)
@@ -138,22 +156,25 @@ namespace CppMMO
 
                     switch (packetId)
                     {
-                        case Protocol::PacketId_C_Move:
+                        case Protocol::PacketId_C_MoveInput:
                         {
-                            const Protocol::C_Move* c_move_packet = static_cast<const Protocol::C_Move*>(unifiedPacket->data());
-                            if (c_move_packet)
+                            const Protocol::C_MoveInput* c_move_input_packet = static_cast<const Protocol::C_MoveInput*>(unifiedPacket->data());
+                            if (c_move_input_packet)
                             {
                                 Game::MoveCommandData moveCommandData;
-                                moveCommandData.entityId = job.session->GetPlayerId();
-                                moveCommandData.targetPosition.x = c_move_packet->target_position()->x();
-                                moveCommandData.targetPosition.y = c_move_packet->target_position()->y();
+                                moveCommandData.playerId = job.session->GetPlayerId();
+                                moveCommandData.currentPosition.x = c_move_input_packet->current_position()->x();
+                                moveCommandData.currentPosition.y = c_move_input_packet->current_position()->y();
+                                moveCommandData.inputFlags = c_move_input_packet->input_flags();
+                                moveCommandData.timestamp = c_move_input_packet->timestamp();
+                                gameCommand.commandId = c_move_input_packet->command_id();
                                 gameCommand.payload = moveCommandData;
                                 m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_DEBUG("In-game PacketId {} (C_Move) pushed to GameLogicQueue.", static_cast<int>(packetId));
+                                LOG_DEBUG("In-game PacketId {} (C_MoveInput) pushed to GameLogicQueue.", static_cast<int>(packetId));
                             }
                             else
                             {
-                                LOG_ERROR("Failed to get C_Move packet data from UnifiedPacket in JobProcessor.");
+                                LOG_ERROR("Failed to get C_MoveInput packet data from UnifiedPacket in JobProcessor.");
                             }
                             break;
                         }

@@ -37,9 +37,9 @@ namespace CppMMO
 
             moodycamel::ConcurrentQueue<std::vector<std::byte>> m_writeQueue;
 
+            asio::steady_timer m_timer;
             uint64_t m_sessionId;
             uint64_t m_playerId = 0;
-            asio::steady_timer m_timer;
 
             // TODO : Set Timeout For Read & Write
             // std::chrono::steady_clock::time_point m_readDeadline;

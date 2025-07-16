@@ -1,7 +1,7 @@
 namespace CppMMO.Protocol;
 
 // Vector for 2D position
-struct Vec2 {
+table Vec2 {
   x:float;
   y:float;
 }
@@ -25,9 +25,9 @@ enum PacketId : ushort {
   // Chat
   C_Chat = 4,
   S_Chat = 5,
-  // Player Movement (2D game)
-  C_Move = 6,
-  S_PlayerMove = 7,
+  // Player Movement (2D game) - Keyboard Input
+  C_MoveInput = 6,
+  S_PlayerMoveState = 7,
   // Zone System
   C_ChangeZone = 8,
   S_EnterZone = 9,
@@ -72,16 +72,29 @@ table S_Chat {
   command_id:long;
 }
 
-// C_Move: Client requests to move
-table C_Move {
-  target_position:Vec2;
+// Input flags for keyboard input (bit flags)
+// 0000 0001 = Up (W)
+// 0000 0010 = Down (S)  
+// 0000 0100 = Left (A)
+// 0000 1000 = Right (D)
+// 0001 0000 = Sprint (Shift) - for future use
+// 0010 0000 = Jump (Space) - for future use
+
+// C_MoveInput: Client sends keyboard input
+table C_MoveInput {
+  current_position:Vec2;
+  input_flags:ubyte;        // bit flags for input (1 byte)
+  timestamp:long;
   command_id:long;
 }
 
-// S_PlayerMove: Server notifies clients about another player's movement
-table S_PlayerMove {
+// S_PlayerMoveState: Server broadcasts player movement state
+table S_PlayerMoveState {
   player_id:long;
-  target_position:Vec2;
+  current_position:Vec2;
+  input_flags:ubyte;        // bit flags for input (1 byte)
+  move_speed:float;
+  server_timestamp:long;
   command_id:long;
 }
 
@@ -126,8 +139,8 @@ union Packet {
   S_LoginFailure,
   C_Chat,
   S_Chat,
-  C_Move,
-  S_PlayerMove,
+  C_MoveInput,
+  S_PlayerMoveState,
   S_PlayerHpUpdate,
   C_ChangeZone,
   S_EnterZone,

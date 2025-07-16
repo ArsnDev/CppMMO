@@ -10,9 +10,9 @@ namespace CppMMO
             {
             }
 
-            void Player::Update(float deltaTime)
+            void Player::Update([[maybe_unused]] float deltaTime)
             {
-
+                // TODO: Implement player update logic
             }
         }
     }

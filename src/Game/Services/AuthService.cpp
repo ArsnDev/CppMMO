@@ -72,7 +72,7 @@ namespace CppMMO
                         shared_from_this()));
             }
 
-            void AuthService::HttpRequestSession::OnConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
+            void AuthService::HttpRequestSession::OnConnect(boost::beast::error_code ec, [[maybe_unused]] boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
             {
                 if (ec)
                 {
