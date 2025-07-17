@@ -1,44 +1,89 @@
 namespace CppMMO.Protocol;
 
-// Vector for 2D position
-table Vec2 {
+// Vector for 3D position (2D는 z=0 사용)
+table Vec3 {
   x:float;
   y:float;
+  z:float;
 }
 
-// Information about a player
+// Game tick information for server authority
+table GameTick {
+  tick_number:ulong;
+  server_time:ulong;
+}
+
+// Player information
 table PlayerInfo {
-  player_id:long;
+  player_id:ulong;
   name:string;
-  position:Vec2;
+  position:Vec3;
   hp:int;
   max_hp:int;
+  mp:int;
+  max_mp:int;
+}
+
+// Player state for server authority simulation
+table PlayerState {
+  player_id:ulong;
+  position:Vec3;
+  velocity:Vec3;
+  rotation:float;
+  hp:int;
+  mp:int;
+  animation_state:ubyte;
+  last_input_sequence:uint;
+}
+
+// Game event types (플레이어간 상호작용)
+enum EventType : ubyte {
+  NONE = 0,
+  PLAYER_DAMAGE = 1,
+  PLAYER_HEAL = 2,
+  PLAYER_DEATH = 3,
+  PLAYER_RESPAWN = 4,
+}
+
+// Game events for player interactions
+table GameEvent {
+  event_type:EventType;
+  source_player_id:ulong;
+  target_player_id:ulong;
+  position:Vec3;
+  value:int;  // damage, heal amount, etc.
 }
 
 // Enum for all packet types
 enum PacketId : ushort {
   NONE = 0,
-  // Login
+  
+  // === Authentication & Chat (기존 유지) ===
   C_Login = 1,
   S_LoginSuccess = 2,
   S_LoginFailure = 3,
-  // Chat
   C_Chat = 4,
   S_Chat = 5,
-  // Player Movement (2D game) - Keyboard Input
-  C_MoveInput = 6,
-  S_PlayerMoveState = 7,
+  
+  // === Server Authority Game Packets ===
+  // Player Input
+  C_PlayerInput = 10,
+  
+  // World State Updates
+  S_WorldSnapshot = 11,
+  S_StateCorrection = 12,
+  S_GameTick = 13,
+  
   // Zone System
-  C_ChangeZone = 8,
-  S_EnterZone = 9,
-  S_LeaveZone = 10,
-  S_PlayerEnterZone = 11,
-  S_PlayerLeaveZone = 12,
-  // Player Stats Update
-  S_PlayerHpUpdate = 13,
+  C_EnterZone = 20,
+  S_ZoneEntered = 21,
+  S_PlayerJoined = 22,
+  S_PlayerLeft = 23,
 }
 
-// --- Packet Body Definitions ---
+// === Packet Definitions ===
+
+// === 기존 Authentication & Chat 패킷들 (유지) ===
 
 // C_Login: Client requests to login
 table C_Login {
@@ -72,81 +117,82 @@ table S_Chat {
   command_id:long;
 }
 
-// Input flags for keyboard input (bit flags)
-// 0000 0001 = Up (W)
-// 0000 0010 = Down (S)  
-// 0000 0100 = Left (A)
-// 0000 1000 = Right (D)
-// 0001 0000 = Sprint (Shift) - for future use
-// 0010 0000 = Jump (Space) - for future use
+// === 새로운 Server Authority 패킷들 ===
 
-// C_MoveInput: Client sends keyboard input
-table C_MoveInput {
-  current_position:Vec2;
-  input_flags:ubyte;        // bit flags for input (1 byte)
-  timestamp:long;
+// C_PlayerInput: Client sends input to server
+table C_PlayerInput {
+  tick_number:ulong;
+  client_time:ulong;
+  input_flags:ubyte;        // WASD 비트 플래그 (1=W, 2=S, 4=A, 8=D)
+  mouse_position:Vec3;      // 마우스 위치 (스킬 방향용)
+  sequence_number:uint;     // 입력 순서 보장
   command_id:long;
 }
 
-// S_PlayerMoveState: Server broadcasts player movement state
-table S_PlayerMoveState {
-  player_id:long;
-  current_position:Vec2;
-  input_flags:ubyte;        // bit flags for input (1 byte)
-  move_speed:float;
-  server_timestamp:long;
+// S_WorldSnapshot: Server sends authoritative world state
+table S_WorldSnapshot {
+  tick_number:ulong;
+  server_time:ulong;
+  player_states:[PlayerState];  // 시야 내 플레이어들
+  events:[GameEvent];           // 이번 틱의 이벤트들
+}
+
+// S_StateCorrection: Server corrects client prediction
+table S_StateCorrection {
+  tick_number:ulong;
+  corrected_position:Vec3;
+  corrected_velocity:Vec3;
+  sequence_number:uint;     // 이 시점의 입력 시퀀스
+}
+
+// S_GameTick: Server sends tick information
+table S_GameTick {
+  tick_info:GameTick;
+}
+
+// C_EnterZone: Client requests to enter a zone
+table C_EnterZone {
+  zone_id:int;
   command_id:long;
 }
 
-// S_PlayerHpUpdate: Server notifies clients about a player's HP change
-table S_PlayerHpUpdate {
-  player_id:long;
-  current_hp:int;
-}
-
-// C_ChangeZone: Client requests to move to a different zone
-table C_ChangeZone {
-  target_zone_id:int;
-  command_id:long;
-}
-
-// S_EnterZone: Server confirms zone entry and provides initial state
-table S_EnterZone {
+// S_ZoneEntered: Server confirms zone entry
+table S_ZoneEntered {
   zone_id:int;
   my_player:PlayerInfo;
   other_players:[PlayerInfo];
-  player_id:long;
 }
 
-// S_LeaveZone: Server confirms the player has left the zone
-table S_LeaveZone {
-}
-
-// S_PlayerEnterZone: Server notifies clients that a new player entered their zone
-table S_PlayerEnterZone {
+// S_PlayerJoined: Notify other players of new player
+table S_PlayerJoined {
   player_info:PlayerInfo;
 }
 
-// S_PlayerLeaveZone: Server notifies clients that a player left their zone
-table S_PlayerLeaveZone {
-  player_id:long;
+// S_PlayerLeft: Notify other players of player leaving
+table S_PlayerLeft {
+  player_id:ulong;
 }
 
 // Union to hold any possible packet data
 union Packet {
+  // Authentication & Chat
   C_Login,
   S_LoginSuccess,
   S_LoginFailure,
   C_Chat,
   S_Chat,
-  C_MoveInput,
-  S_PlayerMoveState,
-  S_PlayerHpUpdate,
-  C_ChangeZone,
-  S_EnterZone,
-  S_LeaveZone,
-  S_PlayerEnterZone,
-  S_PlayerLeaveZone,
+  
+  // Server Authority Game
+  C_PlayerInput,
+  S_WorldSnapshot,
+  S_StateCorrection,
+  S_GameTick,
+  
+  // Zone System
+  C_EnterZone,
+  S_ZoneEntered,
+  S_PlayerJoined,
+  S_PlayerLeft,
 }
 
 // Root table for all packets
