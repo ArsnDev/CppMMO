@@ -70,13 +70,12 @@ namespace CppMMO
                                 LOG_INFO("[LoginPacketHandler] User '{}' authenticated successfully. PlayerId: {}", authResponse.username, authResponse.playerId);
                                 session->SetPlayerId(authResponse.playerId);
                                 flatbuffers::FlatBufferBuilder builder;
-                                auto position = Protocol::CreateVec2(builder, 10.0f, 20.0f);
                                 auto player_name_offset = builder.CreateString(authResponse.username);
                                 
                                 auto player_info_offset = Protocol::CreatePlayerInfo(builder,
                                                                                      authResponse.playerId,
                                                                                      player_name_offset,
-                                                                                     position,
+                                                                                     0,
                                                                                      100,
                                                                                      100);
                                 auto s_login_success_offset = Protocol::CreateS_LoginSuccess(builder, player_info_offset, commandId);

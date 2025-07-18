@@ -1,5 +1,6 @@
 #include "GameManager.h"
 #include <fstream>
+#include <random>
 #include <nlohmann/json.hpp>
 
 namespace CppMMO
@@ -132,7 +133,7 @@ namespace CppMMO
                 std::uniform_real_distribution<float> disX(centerX - spawnRange, centerX + spawnRange);
                 std::uniform_real_distribution<float> disY(centerY - spawnRange, centerY + spawnRange);
                 
-                return Vec3{disX(gen), disY(gen), 0.0f};
+                return Vec3(disX(gen), disY(gen), 0.0f);
             }
 
             /**
@@ -326,7 +327,7 @@ namespace CppMMO
                     LOG_WARN("HandlePlayerInput: Player {} not found in world.", data.playerId);
                     return;
                 }
-                Models::Player& player = playerOpt.value().get();
+                auto& player = playerOpt.value().get();
                 // TODO : Check Sequence Num
                 if (data.sequenceNumber <= player.GetLastInputSequence())
                 {
@@ -357,7 +358,7 @@ namespace CppMMO
                 }
                 
                 Vec3 spawnPosition = GetSpawnPosition();
-                Models::Player newPlayer(data.playerId, spawnPosition);
+                Models::Player newPlayer(data.playerId, "Player_" + std::to_string(data.playerId), spawnPosition);
                 m_world->AddPlayer(std::move(newPlayer));
 
                 m_quadTree->Insert(data.playerId, spawnPosition);
@@ -379,7 +380,7 @@ namespace CppMMO
                     LOG_WARN("HandlePlayerDisconnect: Player {} not found in world.", data.playerId);
                     return;
                 }
-                Models::Player& player = playerOpt.value().get();
+                auto& player = playerOpt.value().get();
 
                 player.SetActive(false);
                 m_quadTree->Remove(data.playerId);

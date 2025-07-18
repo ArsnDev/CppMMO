@@ -37,6 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Game/Managers/GameManager.cpp
     src/Game/Models/Player.cpp
     src/Game/Models/World.cpp
+    src/Game/Spatial/QuadTree.cpp
     src/Game/PacketHandlers/LoginPacketHandler.cpp
     src/Game/PacketHandlers/ChatPacketHandler.cpp
     src/Game/Services/AuthService.cpp

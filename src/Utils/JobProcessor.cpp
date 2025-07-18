@@ -156,53 +156,22 @@ namespace CppMMO
 
                     switch (packetId)
                     {
-                        case Protocol::PacketId_C_MoveInput:
+                        case Protocol::PacketId_C_PlayerInput:
                         {
-                            const Protocol::C_MoveInput* c_move_input_packet = static_cast<const Protocol::C_MoveInput*>(unifiedPacket->data());
-                            if (c_move_input_packet)
+                            const Protocol::C_PlayerInput* c_player_input_packet = static_cast<const Protocol::C_PlayerInput*>(unifiedPacket->data());
+                            if (c_player_input_packet)
                             {
-                                Game::MoveCommandData moveCommandData;
-                                moveCommandData.playerId = job.session->GetPlayerId();
-                                moveCommandData.currentPosition.x = c_move_input_packet->current_position()->x();
-                                moveCommandData.currentPosition.y = c_move_input_packet->current_position()->y();
-                                moveCommandData.inputFlags = c_move_input_packet->input_flags();
-                                moveCommandData.timestamp = c_move_input_packet->timestamp();
-                                gameCommand.commandId = c_move_input_packet->command_id();
-                                gameCommand.payload = moveCommandData;
+                                Game::PlayerInputCommandData playerInputCommandData;
+                                playerInputCommandData.playerId = job.session->GetPlayerId();
+                                playerInputCommandData.inputFlags = c_player_input_packet->input_flags();
+                                playerInputCommandData.sequenceNumber = c_player_input_packet->sequence_number();
+                                gameCommand.payload = playerInputCommandData;
                                 m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_DEBUG("In-game PacketId {} (C_MoveInput) pushed to GameLogicQueue.", static_cast<int>(packetId));
+                                LOG_DEBUG("In-game PacketId {} (C_PlayerInput) pushed to GameLogicQueue.", static_cast<int>(packetId));
                             }
                             else
                             {
-                                LOG_ERROR("Failed to get C_MoveInput packet data from UnifiedPacket in JobProcessor.");
-                            }
-                            break;
-                        }
-                        case Protocol::PacketId_C_ChangeZone:
-                        {
-                            const Protocol::C_ChangeZone* c_change_zone_packet = static_cast<const Protocol::C_ChangeZone*>(unifiedPacket->data());
-                            if (c_change_zone_packet)
-                            {
-                                Game::ChangeZoneCommandData changeZoneCommandData;
-                                changeZoneCommandData.playerId = job.session->GetPlayerId();
-                                changeZoneCommandData.targetZoneId = c_change_zone_packet->target_zone_id();
-                                gameCommand.payload = changeZoneCommandData;
-                                m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_DEBUG("In-game PacketId {} (C_ChangeZone) pushed to GameLogicQueue.", static_cast<int>(packetId));
-                            }
-                            break;
-                        }
-                        case Protocol::PacketId_S_PlayerHpUpdate:
-                        {
-                            const Protocol::S_PlayerHpUpdate* s_player_hp_update_packet = static_cast<const Protocol::S_PlayerHpUpdate*>(unifiedPacket->data());
-                            if (s_player_hp_update_packet)
-                            {
-                                Game::PlayerHpUpdateCommandData hpUpdateCommandData;
-                                hpUpdateCommandData.playerId = s_player_hp_update_packet->player_id();
-                                hpUpdateCommandData.currentHp = s_player_hp_update_packet->current_hp();
-                                gameCommand.payload = hpUpdateCommandData;
-                                m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_DEBUG("In-game PacketId {} (S_PlayerHpUpdate) pushed to GameLogicQueue.", static_cast<int>(packetId));
+                                LOG_ERROR("Failed to get C_PlayerInput packet data from UnifiedPacket in JobProcessor.");
                             }
                             break;
                         }

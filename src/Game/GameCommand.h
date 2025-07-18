@@ -18,13 +18,13 @@
             float y = 0.0f;
             float z = 0.0f;
             
-            Vec3() = default;
-            Vec3(float x_, float y_, float z_ = 0.0f) : x(x_), y(y_), z(z_) {}
+            constexpr Vec3() = default;
+            constexpr Vec3(float x_, float y_, float z_ = 0.0f) : x(x_), y(y_), z(z_) {}
             
             Vec3(const Protocol::Vec3* fbVec3) 
-                : x(fbVec3->X()), y(fbVec3->Y()), z(fbVec3->Z()) {}
+                : x(fbVec3->x()), y(fbVec3->y()), z(fbVec3->z()) {}
             
-            static Vec3 From2D(float x, float y) { return Vec3(x, y, 0.0f); }
+            static constexpr Vec3 From2D(float x, float y) { return Vec3(x, y, 0.0f); }
             bool Is2D() const { return z == 0.0f; }
             
             // Math operations

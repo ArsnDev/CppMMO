@@ -1,4 +1,5 @@
 #include "QuadTree.h"
+#include <stdexcept>
 
 namespace CppMMO
 {
