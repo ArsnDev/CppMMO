@@ -1,5 +1,6 @@
 #include "SessionManager.h"
 #include "Game/GameCommand.h"
+#include "Game/GameLogicQueue.h"
 
 namespace CppMMO
 {
@@ -80,12 +81,12 @@ namespace CppMMO
                 Game::PlayerDisconnectCommandData disconnectData;
                 disconnectData.playerId = playerId;
 
-                Game::GameCommand command;
+                Game::GameCommand command{};
                 command.payload = disconnectData;
                 command.senderSessionId = session->GetSessionId();
                 command.timestamp = Game::GetCurrentTimestamp();
 
-                m_gameLogicQueue->PushCommand(command);
+                m_gameLogicQueue->PushGameCommand(command);
 
                 LOG_INFO("SessionManager: Queued disconnect command for player {}", playerId);
             }

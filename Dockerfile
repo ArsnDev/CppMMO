@@ -79,7 +79,8 @@ RUN mkdir -p build
 
 # Generate build files using CMake
 WORKDIR /app/build
-RUN cmake .. \
+RUN rm -rf CMakeCache.txt CMakeFiles/ && \
+    cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER=g++ \
     -DCMAKE_CXX_STANDARD=20

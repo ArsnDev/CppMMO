@@ -59,6 +59,16 @@ namespace CppMMO
             }
 
             /**
+             * @brief Returns a reference to the map of all players in the world.
+             *
+             * @return Reference to an unordered map associating player IDs with Player objects.
+             */
+            std::unordered_map<uint64_t, Player>& World::GetAllPlayers()
+            {
+                return m_players;
+            }
+
+            /**
              * @brief Returns a const reference to the map of all players in the world.
              *
              * @return Const reference to an unordered map associating player IDs with Player objects.

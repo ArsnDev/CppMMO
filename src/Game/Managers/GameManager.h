@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Game/GameLogicQueue.h"
 #include "Game/Models/World.h"
+#include "Game/Models/Player.h"
 #include "Game/Spatial/QuadTree.h"
 #include "Network/ISessionManager.h"
 #include "protocol_generated.h"
