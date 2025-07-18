@@ -6,6 +6,11 @@
 #include "Network/ISessionManager.h"
 #include "protocol_generated.h"
 
+/**
+ * Manages core game logic, player sessions, and world state for a multiplayer online game.
+ *
+ * The GameManager coordinates the main game loop, processes player commands, updates the game world, manages player visibility and communication, and interacts with network sessions. It uses spatial partitioning for efficient queries and maintains gameplay parameters such as area of interest, chat range, and movement speed.
+ */
 namespace CppMMO
 {
     namespace Game

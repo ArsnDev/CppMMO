@@ -47,6 +47,11 @@ namespace CppMMO
             return nullptr;
         }
 
+        /**
+         * @brief Retrieves all active network sessions.
+         *
+         * @return A vector containing shared pointers to all currently active sessions.
+         */
         std::vector<std::shared_ptr<ISession>> SessionManager::GetAllSessions() const
         {
             std::lock_guard<std::mutex> lock(m_mutex);
@@ -61,6 +66,11 @@ namespace CppMMO
             return sessions;
         }
 
+        /**
+         * @brief Handles a session disconnection by queuing a player disconnect command.
+         *
+         * If the disconnected session has a valid player ID and a game logic command queue is available, constructs and enqueues a player disconnect command for processing by the game logic.
+         */
         void SessionManager::OnSessionDisconnected(std::shared_ptr<ISession> session)
         {
             uint64_t playerId = session->GetPlayerId();

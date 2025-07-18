@@ -4,6 +4,9 @@
 #include "ISessionManager.h"
 #include "ISession.h"
 
+/**
+ * Forward declaration of the GameLogicQueue class in the CppMMO::Game namespace.
+ */
 namespace CppMMO 
 { 
     namespace Game 
@@ -12,6 +15,12 @@ namespace CppMMO
     } 
 }
 
+/**
+ * Handles cleanup and processing when a session is disconnected.
+ * 
+ * This method is invoked internally when a session is no longer active, allowing the manager to perform any necessary cleanup or notify other components.
+ * @param session The session that has been disconnected.
+ */
 namespace CppMMO
 {
     namespace Network

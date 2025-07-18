@@ -3,7 +3,12 @@
 #include "protocol_generated.h"
 #include <variant>
 
-namespace CppMMO
+/**
+         * Represents a 3D vector with float components and provides basic vector operations.
+         *
+         * Supports construction from individual components or a FlatBuffers Vec3, 2D helpers, and common vector math such as addition, subtraction, scalar multiplication, length calculation, and normalization.
+         */
+        namespace CppMMO
 {
     namespace Game
     {

@@ -2,6 +2,11 @@
 #include "pch.h"
 #include "Game/GameCommand.h"
 
+/**
+ * Represents a spatial quadtree for efficient partitioning and querying of player positions in 2D space.
+ *
+ * The QuadTree supports insertion, removal, and updating of player positions, as well as querying for player IDs within a circular area. Nodes subdivide automatically when player counts exceed a threshold, enabling efficient spatial queries and updates.
+ */
 namespace CppMMO
 {
     namespace Game
