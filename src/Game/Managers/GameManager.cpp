@@ -314,7 +314,7 @@ namespace CppMMO
                         const auto& player = playerOpt.value().get();
                         auto pos = Protocol::CreateVec3(builder, player.GetPosition().x, player.GetPosition().y, player.GetPosition().z);
                         
-                        auto vel = Protocol::CreateVec3(builder, 0.0f, 0.0f, 0.0f);
+                        auto vel = Protocol::CreateVec3(builder, player.GetVelocity().x, player.GetVelocity().y, player.GetVelocity().z);
                         
                         auto playerState = Protocol::CreatePlayerState(builder, playerId, pos, vel, player.IsActive());
                         playerStates.push_back(playerState);
