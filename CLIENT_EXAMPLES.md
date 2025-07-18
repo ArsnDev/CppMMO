@@ -150,7 +150,21 @@ public class AuthenticationManager : MonoBehaviour
     
     IEnumerator WaitForConnectionAndLogin()
     {
-        yield return new WaitUntil(() => networkClient.isConnected);
+        float timeout = 10f; // 10초 타임아웃
+        float elapsed = 0f;
+        
+        while (!networkClient.isConnected && elapsed < timeout)
+        {
+            yield return new WaitForSeconds(0.1f);
+            elapsed += 0.1f;
+        }
+        
+        if (!networkClient.isConnected)
+        {
+            Debug.LogError("Connection timeout");
+            yield break;
+        }
+        
         yield return new WaitForSeconds(0.5f); // 연결 안정화 대기
         
         SendLoginRequest();

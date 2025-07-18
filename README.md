@@ -165,7 +165,7 @@ D = 8    // 1000
         "tick_rate": 60
     },
     "network": {
-        "snapshot_rate": 20,
+        "snapshot_rate": 60,
         "reconnect_timeout_minutes": 5
     }
 }
