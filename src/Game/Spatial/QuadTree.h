@@ -13,6 +13,14 @@ namespace CppMMO
             public:
                 QuadTree(float x, float y, float width, float height);
                 ~QuadTree() = default;
+                
+                // 복사 금지 (unique_ptr 때문에)
+                QuadTree(const QuadTree&) = delete;
+                QuadTree& operator=(const QuadTree&) = delete;
+                
+                // 이동 허용
+                QuadTree(QuadTree&&) = default;
+                QuadTree& operator=(QuadTree&&) = default;
 
                 void Insert(uint64_t playerId, const Vec3& position);
                 void Remove(uint64_t playerId);

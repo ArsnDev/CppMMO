@@ -74,9 +74,11 @@ namespace CppMMO
                     m_aoiRange = config["gameplay"]["aoi_range"].get<float>();
                     m_chatRange = config["gameplay"]["chat_range"].get<float>();
                     m_moveSpeed = config["gameplay"]["move_speed"].get<float>();
+                    m_tickRate = config["gameplay"]["tick_rate"].get<int>();
+                    m_tickDuration = std::chrono::milliseconds(1000 / m_tickRate);
                     
-                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}", 
-                            m_aoiRange, m_chatRange, m_moveSpeed);
+                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}, TickRate: {}", 
+                            m_aoiRange, m_chatRange, m_moveSpeed, m_tickRate);
                 }
                 catch (const std::exception& e)
                 {
@@ -108,7 +110,7 @@ namespace CppMMO
                     auto currentTime = std::chrono::steady_clock::now();
                     auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTickTime);
                     
-                    if (deltaTime >= TICK_DURATION)
+                    if (deltaTime >= m_tickDuration)
                     {
                         try
                         {
@@ -160,7 +162,7 @@ namespace CppMMO
             {
                 m_world->Update(deltaTime);
                 
-                for (const auto& [playerId, player] : m_world->GetAllPlayers())
+                for (auto& [playerId, player] : m_world->GetAllPlayers())
                 {
                     if (player.IsActive())
                     {
@@ -311,13 +313,12 @@ namespace CppMMO
                 auto playerStatesVector = builder.CreateVector(playerStates);
                 auto eventsVector = builder.CreateVector<flatbuffers::Offset<Protocol::GameEvent>>({});
 
-                static uint64_t tickNumber = 0;
-                tickNumber++;
+                m_tickNumber++;
                 uint64_t serverTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count();
+                    std::chrono::steady_clock::now().time_since_epoch()).count();
 
                 auto snapshot = Protocol::CreateS_WorldSnapshot(builder,
-                    tickNumber,
+                    m_tickNumber,
                     serverTime,
                     playerStatesVector,
                     eventsVector);

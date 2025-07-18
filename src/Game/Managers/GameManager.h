@@ -32,9 +32,10 @@ namespace CppMMO
                 // Game loop
                 std::thread m_gameLoopThread;
                 std::atomic<bool> m_running = false;
+                uint64_t m_tickNumber = 0;
 
-                static constexpr int TICK_RATE = 60;
-                static constexpr std::chrono::milliseconds TICK_DURATION{1000 / TICK_RATE};
+                int m_tickRate = 60;
+                std::chrono::milliseconds m_tickDuration{1000 / 60};
 
                 float m_aoiRange = 100.0f;
                 float m_chatRange = 50.0f;

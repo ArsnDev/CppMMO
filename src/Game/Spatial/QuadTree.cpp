@@ -8,6 +8,9 @@ namespace CppMMO
         {
             QuadTree::QuadTree(float x, float y, float width, float height)
             {
+                if (width <= 0.0f || height <= 0.0f) {
+                    throw std::invalid_argument("QuadTree bounds must have positive width and height");
+                }
                 m_root = CreateNode(Bounds(x, y, width, height));
             }
             void QuadTree::Insert(uint64_t playerId, const Vec3& position) 
@@ -128,7 +131,11 @@ namespace CppMMO
                 if (node->IsLeaf()) {
                     float radiusSquared = radius * radius;
                     for (uint64_t playerId : node->playerIds) {
-                        Vec3 playerPos = m_playerPositions.at(playerId);
+                        auto it = m_playerPositions.find(playerId);
+                        if (it == m_playerPositions.end()) {
+                            continue; // 플레이어가 이미 제거됨
+                        }
+                        Vec3 playerPos = it->second;
                         float distanceSquared = std::pow(playerPos.x - center.x, 2) + std::pow(playerPos.y - center.y, 2);
                         if (distanceSquared <= radiusSquared) {
                             result.push_back(playerId);
