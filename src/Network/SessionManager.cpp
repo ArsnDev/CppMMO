@@ -1,4 +1,5 @@
 #include "SessionManager.h"
+#include "Game/GameCommand.h"
 
 namespace CppMMO
 {
@@ -41,6 +42,26 @@ namespace CppMMO
             }
             
             return sessions;
+        }
+
+        void SessionManager::OnSessionDisconnected(std::shared_ptr<ISession> session)
+        {
+            uint64_t playerId = session->GetPlayerId();
+
+            if(playerId != 0 && m_gameLogicQueue)
+            {
+                Game::PlayerDisconnectCommandData disconnectData;
+                disconnectData.playerId = playerId;
+
+                Game::GameCommand command;
+                command.payload = disconnectData;
+                command.senderSessionId = session->GetSessionId();
+                command.timestamp = Game::GetCurrentTimestamp();
+
+                m_gameLogicQueue->PushCommand(command);
+
+                LOG_INFO("SessionManager: Queued disconnect command for player {}", playerId);
+            }
         }
     }
 }

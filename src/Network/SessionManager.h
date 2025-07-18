@@ -4,6 +4,14 @@
 #include "ISessionManager.h"
 #include "ISession.h"
 
+namespace CppMMO 
+{ 
+    namespace Game 
+    { 
+        class GameLogicQueue; 
+    } 
+}
+
 namespace CppMMO
 {
     namespace Network
@@ -12,6 +20,7 @@ namespace CppMMO
         {
         public:
             SessionManager() = default;
+            explicit SessionManager(std::shared_ptr<Game::GameLogicQueue> gameLogicQueue);
             virtual ~SessionManager() noexcept override = default;
 
             virtual void AddSession(std::shared_ptr<ISession> session) override;
@@ -21,6 +30,9 @@ namespace CppMMO
         private:
             mutable std::mutex m_mutex;
             std::unordered_map<uint64_t, std::shared_ptr<ISession>> m_activeSessions;
+
+            std::shared_ptr<Game::GameLogicQueue> m_gameLogicQueue;
+            void OnSessionDisconnected(std::shared_ptr<ISession> session); 
         };
     }
 }

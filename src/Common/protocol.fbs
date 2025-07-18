@@ -32,7 +32,6 @@ table PlayerState {
   rotation:float;
   hp:int;
   mp:int;
-  animation_state:ubyte;
   last_input_sequence:uint;
 }
 
