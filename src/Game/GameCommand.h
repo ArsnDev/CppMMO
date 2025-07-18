@@ -1,93 +1,126 @@
 #pragma once
 #include "pch.h"
+#include "protocol_generated.h"
 #include <variant>
 
 namespace CppMMO
 {
     namespace Game
     {
-        struct Vec2
+        struct Vec3
         {
             float x = 0.0f;
             float y = 0.0f;
+            float z = 0.0f;
+            
+            Vec3() = default;
+            Vec3(float x_, float y_, float z_ = 0.0f) : x(x_), y(y_), z(z_) {}
+            
+            Vec3(const Protocol::Vec3* fbVec3) 
+                : x(fbVec3->X()), y(fbVec3->Y()), z(fbVec3->Z()) {}
+            
+            static Vec3 From2D(float x, float y) { return Vec3(x, y, 0.0f); }
+            bool Is2D() const { return z == 0.0f; }
+            
+            // Math operations
+            Vec3 operator+(const Vec3& other) const { return Vec3(x + other.x, y + other.y, z + other.z); }
+            Vec3 operator-(const Vec3& other) const { return Vec3(x - other.x, y - other.y, z - other.z); }
+            Vec3 operator*(float scalar) const { return Vec3(x * scalar, y * scalar, z * scalar); }
+            
+            float Length() const { return std::sqrt(x * x + y * y + z * z); }
+            Vec3 Normalized() const { 
+                float len = Length(); 
+                return len > 0.0f ? Vec3(x/len, y/len, z/len) : Vec3(); 
+            }
         };
 
-        // Input flags for keyboard input (bit flags)
         enum InputFlags : uint8_t
         {
             None = 0,
-            Up = 1 << 0,      // 0000 0001 = Up (W)
-            Down = 1 << 1,    // 0000 0010 = Down (S)
-            Left = 1 << 2,    // 0000 0100 = Left (A)
-            Right = 1 << 3,   // 0000 1000 = Right (D)
-            Sprint = 1 << 4,  // 0001 0000 = Sprint (Shift) - for future use
-            Jump = 1 << 5     // 0010 0000 = Jump (Space) - for future use
+            W = 1,        // 0000 0001 = W (Up)
+            S = 2,        // 0000 0010 = S (Down)  
+            A = 4,        // 0000 0100 = A (Left)
+            D = 8,        // 0000 1000 = D (Right)
+            Shift = 16,   // 0001 0000 = Sprint (Shift) - for future use
+            Space = 32    // 0010 0000 = Jump (Space) - for future use
         };
 
-        // Convert input flags to direction vector
-        inline Vec2 InputFlagsToDirection(uint8_t inputFlags)
+        inline Vec3 InputFlagsToDirection(uint8_t inputFlags)
         {
-            Vec2 direction{0.0f, 0.0f};
+            Vec3 direction{0.0f, 0.0f, 0.0f};
+
+            bool w = (inputFlags & InputFlags::W) != 0;
+            bool s = (inputFlags & InputFlags::S) != 0;
+            bool a = (inputFlags & InputFlags::A) != 0;
+            bool d = (inputFlags & InputFlags::D) != 0;
+
+            if (w && !s) direction.y += 1.0f;
+            else if (s && !w) direction.y -= 1.0f;
             
-            // Handle opposing inputs (Up+Down, Left+Right cancel each other)
-            bool up = (inputFlags & InputFlags::Up) != 0;
-            bool down = (inputFlags & InputFlags::Down) != 0;
-            bool left = (inputFlags & InputFlags::Left) != 0;
-            bool right = (inputFlags & InputFlags::Right) != 0;
+            if (a && !d) direction.x -= 1.0f;
+            else if (d && !a) direction.x += 1.0f;
             
-            // Vertical direction processing (Up and Down cancel each other)
-            if (up && !down) direction.y += 1.0f;
-            else if (down && !up) direction.y -= 1.0f;
-            
-            // Horizontal direction processing (Left and Right cancel each other)
-            if (left && !right) direction.x -= 1.0f;
-            else if (right && !left) direction.x += 1.0f;
-            
-            // Normalize diagonal movement (maintain consistent speed)
-            float magnitude = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-            if (magnitude > 0.0f) {
-                direction.x /= magnitude;
-                direction.y /= magnitude;
-            }
-            
-            return direction;
+            return direction.Normalized();
         }
 
-        // Check if player is moving
         inline bool IsMoving(uint8_t inputFlags)
         {
-            return (inputFlags & (InputFlags::Up | InputFlags::Down | InputFlags::Left | InputFlags::Right)) != 0;
+            return (inputFlags & (InputFlags::W | InputFlags::S | InputFlags::A | InputFlags::D)) != 0;
         }
 
-        struct MoveCommandData
+        inline uint64_t GetCurrentTimestamp()
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+        }
+
+        struct PlayerInputCommandData
         {
             uint64_t playerId = 0;
-            Vec2 currentPosition{};
-            uint8_t inputFlags = 0;        // bit flags for input
-            int64_t timestamp = 0;
+            uint64_t tickNumber = 0;
+            uint64_t clientTime = 0;
+            uint8_t inputFlags = 0;
+            Vec3 mousePosition{};
+            uint32_t sequenceNumber = 0;
+            int64_t sessionId = 0;
         };
 
-        struct PlayerHpUpdateCommandData
+        struct EnterZoneCommandData
         {
             uint64_t playerId = 0;
-            int currentHp = 0;
+            int zoneId = 0;
+            int64_t sessionId = 0;
         };
 
-        struct ChangeZoneCommandData
+        struct PlayerSpawnCommandData
         {
             uint64_t playerId = 0;
-            int targetZoneId = 0;
+            std::string playerName;
+            Vec3 spawnPosition{};
+            int hp = 100;
+            int maxHp = 100;
+            int mp = 50;
+            int maxMp = 50;
         };
 
-        using GameCommandPayload = std::variant<MoveCommandData,
-                                                PlayerHpUpdateCommandData,
-                                                ChangeZoneCommandData
-                                                >;
+        struct PlayerDisconnectCommandData
+        {
+            uint64_t playerId = 0;
+        };
+
+        using GameCommandPayload = std::variant<
+            PlayerInputCommandData,
+            EnterZoneCommandData,
+            PlayerSpawnCommandData,
+            PlayerDisconnectCommandData
+        >;
+
         struct GameCommand
         {
             int64_t commandId = 0;
             GameCommandPayload payload{};
             int64_t senderSessionId = 0;
+            uint64_t timestamp = 0;
         };
     }
 }
