@@ -8,6 +8,11 @@ namespace CppMMO
     {
         namespace Managers
         {
+            /**
+             * @brief Constructs a GameManager, initializing core game state and configuration.
+             *
+             * Loads game configuration from file, sets up the world model and spatial index, and prepares the game for operation.
+             */
             GameManager::GameManager(std::shared_ptr<GameLogicQueue> gameLogicQueue,
                                    std::shared_ptr<Network::ISessionManager> sessionManager)
                 : m_gameLogicQueue(gameLogicQueue),
@@ -21,11 +26,20 @@ namespace CppMMO
                 LOG_INFO("GameManager initialized with 60 TPS, AOI range: {}, Map size: 200x200", m_aoiRange);
             }
 
+            /**
+             * @brief Destructor for GameManager, ensuring the game loop is stopped and resources are cleaned up.
+             */
             GameManager::~GameManager()
             {
                 Stop();
             }
 
+            /**
+             * @brief Starts the game loop if it is not already running.
+             *
+             * Sets the running flag and launches the main game loop thread at a fixed tick rate.
+             * If the game loop is already active, the function returns without effect.
+             */
             void GameManager::Start()
             {
                 if (m_running.load(std::memory_order_acquire))
@@ -39,6 +53,11 @@ namespace CppMMO
                 LOG_INFO("GameManager started with 60 TPS game loop.");
             }
 
+            /**
+             * @brief Stops the game loop and performs cleanup.
+             *
+             * Halts the main game loop, shuts down the game logic queue, and joins the game loop thread if it is running.
+             */
             void GameManager::Stop()
             {
                 if (!m_running.load(std::memory_order_acquire))
@@ -57,6 +76,11 @@ namespace CppMMO
                 LOG_INFO("GameManager stopped.");
             }
 
+            /**
+             * @brief Loads game configuration parameters from a JSON file.
+             *
+             * Attempts to read gameplay parameters such as area of interest range, chat range, and move speed from "config/game_config.json". If the file cannot be opened or parsed, default values are retained and a warning or error is logged.
+             */
             void GameManager::LoadGameConfig()
             {
                 try
@@ -84,6 +108,11 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Generates a random spawn position within a predefined area.
+             *
+             * @return Vec3 A position with x and y coordinates randomly selected between 90.0 and 110.0, and z set to 0.
+             */
             Vec3 GameManager::GetSpawnPosition() const
             {
                 static std::random_device rd;
@@ -93,12 +122,25 @@ namespace CppMMO
                 return Vec3{dis(gen), dis(gen), 0.0f};
             }
 
+            /**
+             * @brief Checks if a position is within the valid map boundaries.
+             *
+             * Determines whether the given position lies inside the 200x200 map area.
+             *
+             * @param position The position to validate.
+             * @return true if the position is within bounds; false otherwise.
+             */
             bool GameManager::IsValidPosition(const Vec3& position) const
             {
                 return position.x >= 0.0f && position.x < 200.0f && 
                        position.y >= 0.0f && position.y < 200.0f;
             }
 
+            /**
+             * @brief Runs the main game loop, processing commands, updating the world, and sending snapshots at a fixed tick rate.
+             *
+             * The loop continues while the game is running, maintaining a consistent tick interval. On each tick, it processes pending game commands, updates the world state based on elapsed time, and sends updated world snapshots to players. Exceptions during the loop are caught and logged.
+             */
             void GameManager::GameLoop()
             {
                 auto lastTickTime = std::chrono::steady_clock::now();
@@ -130,6 +172,11 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Processes all pending game commands from the game logic queue.
+             *
+             * Continuously retrieves and processes commands from the queue until it is empty or the game manager is no longer running. Each command is dispatched to the appropriate handler. Exceptions during command processing are caught and logged.
+             */
             void GameManager::ProcessPendingCommands()
             {
                 while (true)
@@ -156,6 +203,13 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Updates the world state and player positions for the current tick.
+             *
+             * Advances the simulation by the specified delta time, updating all active players' positions based on their velocities. Ensures new positions are within map boundaries and updates the spatial index accordingly.
+             *
+             * @param deltaTime Time elapsed since the last update, in seconds.
+             */
             void GameManager::UpdateWorld(float deltaTime)
             {
                 m_world->Update(deltaTime);
@@ -174,6 +228,11 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Sends world state snapshots to all active players.
+             *
+             * For each active player, determines nearby players within their area of interest (AOI) and sends a snapshot containing the states of those visible players.
+             */
             void GameManager::SendWorldSnapshots()
             {
                 for (const auto& [playerId, player] : m_world->GetAllPlayers())
@@ -186,11 +245,24 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Returns the IDs of players within the area of interest (AOI) around a given position.
+             *
+             * Queries the spatial QuadTree to find all players located within the configured AOI range of the specified position.
+             *
+             * @param position The center position to search around.
+             * @return std::vector<uint64_t> List of player IDs within AOI range.
+             */
             std::vector<uint64_t> GameManager::GetPlayersInAOI(const Vec3& position)
             {
                 return m_quadTree->Query(position, m_aoiRange);
             }
 
+            /**
+             * @brief Processes a game command by dispatching it to the appropriate handler based on its payload type.
+             *
+             * Validates the sender's session and routes the command to the corresponding handler for player input, zone entry, or player disconnect events.
+             */
             void GameManager::ProcessGameCommand(GameCommand command)
             {
                 if (!m_sessionManager)
@@ -228,6 +300,11 @@ namespace CppMMO
                 }, command.payload);
             }
 
+            /**
+             * @brief Processes a player's input command, updating their movement and input state.
+             *
+             * If the player exists and the input sequence number is newer than the last processed, updates the player's input flags and velocity based on the provided input.
+             */
             void GameManager::HandlePlayerInput(const PlayerInputCommandData& data, std::shared_ptr<Network::ISession> session)
             {
                 auto playerOpt = m_world->GetPlayer(data.playerId);
@@ -252,6 +329,11 @@ namespace CppMMO
                     data.playerId, data.inputFlags, velocity.x, velocity.y);
             }
 
+            /**
+             * @brief Handles a player's request to enter the game zone.
+             *
+             * Adds a new player to the world at a random spawn position if they are not already present, inserts them into the spatial index, sends an enter zone response to the player's session, and broadcasts the join event to other players.
+             */
             void GameManager::HandleEnterZone(const EnterZoneCommandData& data, std::shared_ptr<Network::ISession> session)
             {
                 auto existingPlayer = m_world->GetPlayer(data.playerId);
@@ -271,6 +353,11 @@ namespace CppMMO
                 LOG_INFO("HandleEnterZone: Player {} entered zone at ({}, {})", data.playerId, spawnPosition.x, spawnPosition.y);
             }
 
+            /**
+             * @brief Handles player disconnection by marking the player inactive and removing them from the world.
+             *
+             * Marks the specified player as inactive, removes them from the spatial index, and broadcasts a player left event to other players.
+             */
             void GameManager::HandlePlayerDisconnect(const PlayerDisconnectCommandData& data, std::shared_ptr<Network::ISession> session)
             {
                 auto playerOpt = m_world->GetPlayer(data.playerId);
@@ -288,6 +375,14 @@ namespace CppMMO
                 LOG_INFO("HandlePlayerDisconnect: Player {} disconnected.", data.playerId);
             }
 
+            /**
+             * @brief Sends a world snapshot packet to specified players, including the states of visible players.
+             *
+             * Constructs a FlatBuffers-serialized snapshot containing the current tick, server time, and the state of each visible player, then sends it to each player in the provided list if their session is connected.
+             *
+             * @param playerIds List of player IDs to receive the snapshot.
+             * @param visiblePlayers List of player IDs whose states are included in the snapshot.
+             */
             void GameManager::SendSnapshotToPlayers(const std::vector<uint64_t>& playerIds, const std::vector<uint64_t>& visiblePlayers)
             {
                 flatbuffers::FlatBufferBuilder builder;
@@ -341,6 +436,14 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Sends a zone entry response to a player upon entering the game world.
+             *
+             * Constructs and sends a FlatBuffers packet containing the entering player's information and a list of nearby players to the specified session. The response includes player IDs, names, positions, and default HP values.
+             *
+             * @param playerId The ID of the player entering the zone.
+             * @param session The network session associated with the player.
+             */
             void GameManager::SendEnterZoneResponse(uint64_t playerId, std::shared_ptr<Network::ISession> session)
             {
                 flatbuffers::FlatBufferBuilder builder;
@@ -389,6 +492,14 @@ namespace CppMMO
                 }
             }
 
+            /**
+             * @brief Converts input flags to a normalized 2D movement direction vector.
+             *
+             * Maps a 4-bit input flag (representing combinations of WASD keys) to a corresponding direction vector, handling diagonal and conflicting inputs.
+             *
+             * @param inputFlags Bitmask representing pressed movement keys (WASD).
+             * @return Vec3 Normalized direction vector based on input flags; zero vector if input is conflicting or no movement.
+             */
             Vec3 GameManager::InputFlagsToDirection(uint8_t inputFlags) const
             {
                 static constexpr Vec3 DIRECTION_TABLE[16] = {
@@ -413,6 +524,13 @@ namespace CppMMO
                 return DIRECTION_TABLE[inputFlags & 0x0F];
             }
 
+            /**
+             * @brief Broadcasts a player joined event to all other active players.
+             *
+             * Sends a notification containing the joining player's information to all connected and active player sessions except the joining player.
+             *
+             * @param playerId The ID of the player who has joined.
+             */
             void GameManager::BroadcastPlayerJoined(uint64_t playerId)
             {
                 auto playerOpt = m_world->GetPlayer(playerId);
@@ -450,6 +568,13 @@ namespace CppMMO
                 LOG_INFO("BroadcastPlayerJoined: Player {} joined, notified others", playerId);
             }
 
+            /**
+             * @brief Broadcasts a player left event to all other active players.
+             *
+             * Sends a notification packet to all connected sessions, except the player who left, informing them that the specified player has left the game.
+             *
+             * @param playerId The ID of the player who has left.
+             */
             void GameManager::BroadcastPlayerLeft(uint64_t playerId)
             {
                 flatbuffers::FlatBufferBuilder builder;

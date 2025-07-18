@@ -3,6 +3,11 @@
 #include "Game/GameCommand.h"
 #include "Network/ISession.h"
 
+/**
+ * Represents a player entity in the game, encapsulating identity, state, stats, input, and connection status.
+ *
+ * Provides methods to access and modify player attributes such as position, velocity, rotation, health, mana, input flags, mouse position, and connection state. Also manages synchronization and timing information relevant to gameplay and networking.
+ */
 namespace CppMMO
 {
     namespace Game
