@@ -16,9 +16,10 @@ namespace CppMMO
                 LoadGameConfig();
                 
                 m_world = std::make_unique<Models::World>();
-                m_quadTree = std::make_unique<Spatial::QuadTree>(0.0f, 0.0f, 200.0f, 200.0f);
+                m_quadTree = std::make_unique<Spatial::QuadTree>(0.0f, 0.0f, m_mapWidth, m_mapHeight);
                 
-                LOG_INFO("GameManager initialized with 60 TPS, AOI range: {}, Map size: 200x200", m_aoiRange);
+                LOG_INFO("GameManager initialized with {} TPS, AOI range: {}, Map size: {}x{}", 
+                        m_tickRate, m_aoiRange, m_mapWidth, m_mapHeight);
             }
 
             GameManager::~GameManager()
@@ -77,8 +78,11 @@ namespace CppMMO
                     m_tickRate = config["gameplay"]["tick_rate"].get<int>();
                     m_tickDuration = std::chrono::milliseconds(1000 / m_tickRate);
                     
-                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}, TickRate: {}", 
-                            m_aoiRange, m_chatRange, m_moveSpeed, m_tickRate);
+                    m_mapWidth = config["map"]["width"].get<float>();
+                    m_mapHeight = config["map"]["height"].get<float>();
+                    
+                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}, TickRate: {}, Map: {}x{}", 
+                            m_aoiRange, m_chatRange, m_moveSpeed, m_tickRate, m_mapWidth, m_mapHeight);
                 }
                 catch (const std::exception& e)
                 {
@@ -90,15 +94,22 @@ namespace CppMMO
             {
                 static std::random_device rd;
                 static std::mt19937 gen(rd());
-                static std::uniform_real_distribution<float> dis(90.0f, 110.0f);
                 
-                return Vec3{dis(gen), dis(gen), 0.0f};
+                // 맵 중앙 근처에서 스폰 (20% 범위)
+                float centerX = m_mapWidth * 0.5f;
+                float centerY = m_mapHeight * 0.5f;
+                float spawnRange = std::min(m_mapWidth, m_mapHeight) * 0.1f;
+                
+                std::uniform_real_distribution<float> disX(centerX - spawnRange, centerX + spawnRange);
+                std::uniform_real_distribution<float> disY(centerY - spawnRange, centerY + spawnRange);
+                
+                return Vec3{disX(gen), disY(gen), 0.0f};
             }
 
             bool GameManager::IsValidPosition(const Vec3& position) const
             {
-                return position.x >= 0.0f && position.x < 200.0f && 
-                       position.y >= 0.0f && position.y < 200.0f;
+                return position.x >= 0.0f && position.x < m_mapWidth && 
+                       position.y >= 0.0f && position.y < m_mapHeight;
             }
 
             void GameManager::GameLoop()

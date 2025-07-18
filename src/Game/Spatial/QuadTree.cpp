@@ -77,7 +77,7 @@ namespace CppMMO
 
                         for (uint64_t pid : playersToReinsert)
                         {
-                            Vec3 playerPos = m_playerPositions[pid];
+                            Vec3 playerPos = (pid == playerId) ? position : m_playerPositions[pid];
 
                             if (node->nw->bounds.Contains(playerPos))
                                 InsertIntoNode(node->nw.get(), pid, playerPos, depth + 1);

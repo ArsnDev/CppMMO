@@ -40,6 +40,8 @@ namespace CppMMO
                 float m_aoiRange = 100.0f;
                 float m_chatRange = 50.0f;
                 float m_moveSpeed = 5.0f;
+                float m_mapWidth = 200.0f;
+                float m_mapHeight = 200.0f;
 
                 void GameLoop();
                 void ProcessPendingCommands();
