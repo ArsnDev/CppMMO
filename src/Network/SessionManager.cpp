@@ -5,6 +5,10 @@ namespace CppMMO
 {
     namespace Network
     {
+        SessionManager::SessionManager(std::shared_ptr<Game::GameLogicQueue> gameLogicQueue)
+            : m_gameLogicQueue(gameLogicQueue)
+        {
+        }
         void SessionManager::AddSession(std::shared_ptr<ISession> session)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
@@ -14,9 +18,22 @@ namespace CppMMO
 
         void SessionManager::RemoveSession(uint64_t sessionId)
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_activeSessions.erase(sessionId);
-            LOG_INFO("SessionManager: Session {} removed. Total active sessions: {}", sessionId, m_activeSessions.size());
+            std::shared_ptr<ISession> session;
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                auto it = m_activeSessions.find(sessionId);
+                if (it != m_activeSessions.end())
+                {
+                    session = it->second;
+                    m_activeSessions.erase(it);
+                }
+            }
+            
+            if (session)
+            {
+                OnSessionDisconnected(session);
+                LOG_INFO("SessionManager: Session {} removed. Total active sessions: {}", sessionId, m_activeSessions.size());
+            }
         }
 
         std::shared_ptr<ISession> SessionManager::GetSession(uint64_t sessionId) const

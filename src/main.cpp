@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
 
         auto jobQueue = std::make_shared<CppMMO::Utils::JobQueue>();
         auto packetManager = std::make_shared<CppMMO::Network::PacketManager>(jobQueue);
-        auto sessionManager = std::make_shared<CppMMO::Network::SessionManager>();
         auto gameLogicQueue = std::make_shared<CppMMO::Game::GameLogicQueue>();
+        auto sessionManager = std::make_shared<CppMMO::Network::SessionManager>(gameLogicQueue);
         auto jobProcessor = std::make_shared<CppMMO::Utils::JobProcessor>(jobQueue, packetManager, gameLogicQueue);
         auto gameManager = std::make_shared<CppMMO::Game::Managers::GameManager>(gameLogicQueue, sessionManager);
         auto authService = std::make_shared<CppMMO::Game::Services::AuthService>(io_context, authHost, authPort);

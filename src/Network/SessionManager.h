@@ -27,12 +27,13 @@ namespace CppMMO
             virtual void RemoveSession(uint64_t sessionId) override;
             virtual std::shared_ptr<ISession> GetSession(uint64_t sessionId) const override;
             virtual std::vector<std::shared_ptr<ISession>> GetAllSessions() const override;
+            
+            void OnSessionDisconnected(std::shared_ptr<ISession> session);
         private:
             mutable std::mutex m_mutex;
             std::unordered_map<uint64_t, std::shared_ptr<ISession>> m_activeSessions;
 
-            std::shared_ptr<Game::GameLogicQueue> m_gameLogicQueue;
-            void OnSessionDisconnected(std::shared_ptr<ISession> session); 
+            std::shared_ptr<Game::GameLogicQueue> m_gameLogicQueue; 
         };
     }
 }
