@@ -14,12 +14,14 @@ namespace AuthServer.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IConnectionMultiplexer _redis;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IUserRepository userRepository, IPlayerRepository playerRepository, IConnectionMultiplexer redis)
+        public AuthController(IUserRepository userRepository, IPlayerRepository playerRepository, IConnectionMultiplexer redis, ILogger<AuthController> logger)
         {
             _userRepository = userRepository;
             _playerRepository = playerRepository;
             _redis = redis;
+            _logger = logger;
         }
 
         [HttpPost("register")]
