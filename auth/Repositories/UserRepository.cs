@@ -19,6 +19,12 @@ namespace AuthServer.Repositories
             return await _dbConnection.QuerySingleOrDefaultAsync<User>(sql, new { Username = username });
         }
 
+        public async Task<User?> GetUserByIdAsync(int userId)
+        {
+            var sql = "SELECT Id, Username, PasswordHash, CreatedAt FROM users WHERE Id = @UserId";
+            return await _dbConnection.QuerySingleOrDefaultAsync<User>(sql, new { UserId = userId });
+        }
+
         public async Task<User> CreateUserAsync(string username, string passwordHash)
         {
             var sql = @"
