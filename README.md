@@ -183,7 +183,6 @@ D = 8    // 1000
 
 ### **📚 제공 문서**
 - **[SERVER_DOCUMENTATION.md](SERVER_DOCUMENTATION.md)**: 서버 전체 가이드
-- **[CLIENT_EXAMPLES.md](CLIENT_EXAMPLES.md)**: Unity 클라이언트 구현 예제
 - **[PROTOCOL_REFERENCE.md](PROTOCOL_REFERENCE.md)**: FlatBuffers 프로토콜 완전 가이드
 
 ### **Unity 클라이언트 개발 순서**
@@ -239,7 +238,6 @@ CppMMO/
 ├── Dockerfile                    # 게임 서버 Docker 이미지
 ├── CMakeLists.txt               # CMake 빌드 설정
 ├── SERVER_DOCUMENTATION.md      # 서버 가이드 문서
-├── CLIENT_EXAMPLES.md           # Unity 클라이언트 예제
 ├── PROTOCOL_REFERENCE.md        # 프로토콜 참조 문서
 └── README.md                    # 이 파일
 ```
