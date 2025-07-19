@@ -38,6 +38,34 @@ public struct S_LoginSuccess : IFlatbufferObject
     int o = builder.EndTable();
     return new Offset<CppMMO.Protocol.S_LoginSuccess>(o);
   }
+  public S_LoginSuccessT UnPack() {
+    var _o = new S_LoginSuccessT();
+    this.UnPackTo(_o);
+    return _o;
+  }
+  public void UnPackTo(S_LoginSuccessT _o) {
+    _o.PlayerInfo = this.PlayerInfo.HasValue ? this.PlayerInfo.Value.UnPack() : null;
+    _o.CommandId = this.CommandId;
+  }
+  public static Offset<CppMMO.Protocol.S_LoginSuccess> Pack(FlatBufferBuilder builder, S_LoginSuccessT _o) {
+    if (_o == null) return default(Offset<CppMMO.Protocol.S_LoginSuccess>);
+    var _player_info = _o.PlayerInfo == null ? default(Offset<CppMMO.Protocol.PlayerInfo>) : CppMMO.Protocol.PlayerInfo.Pack(builder, _o.PlayerInfo);
+    return CreateS_LoginSuccess(
+      builder,
+      _player_info,
+      _o.CommandId);
+  }
+}
+
+public class S_LoginSuccessT
+{
+  public CppMMO.Protocol.PlayerInfoT PlayerInfo { get; set; }
+  public long CommandId { get; set; }
+
+  public S_LoginSuccessT() {
+    this.PlayerInfo = null;
+    this.CommandId = 0;
+  }
 }
 
 

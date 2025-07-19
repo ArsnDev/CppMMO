@@ -252,6 +252,13 @@ namespace AuthServer.Controllers
                 return Unauthorized(new DeleteUserResponseDto { Success = false, Message = "Invalid or expired session ticket." });
             }
 
+            // Verify password before deletion
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            {
+                return Unauthorized(new DeleteUserResponseDto { Success = false, Message = "Invalid password." });
+            }
+
             try
             {
                 int deletedCharactersCount = await _playerRepository.DeletePlayersByUserIdAsync(userId);
@@ -274,10 +281,11 @@ namespace AuthServer.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to delete user account for userId: {UserId}", userId);
                 return StatusCode(500, new DeleteUserResponseDto 
                 { 
                     Success = false, 
-                    Message = $"An error occurred while deleting account: {ex.Message}" 
+                    Message = "An error occurred while deleting account. Please try again later." 
                 });
             }
         }
