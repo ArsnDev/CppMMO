@@ -43,6 +43,7 @@ namespace CppMMO
                     float x, y;
                     float width, height;
 
+                    Bounds(float x, float y, float width, float height);
                     bool Contains(const Vec3& point) const;
                     bool Intersects(const Vec3& center, float radius) const;
                 };
@@ -57,6 +58,7 @@ namespace CppMMO
                     std::unique_ptr<Node> sw;
                     std::unique_ptr<Node> se;
 
+                    Node(const Bounds& bounds);
                     bool IsLeaf() const{return nw == nullptr;}
                 };
 

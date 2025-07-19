@@ -12,6 +12,8 @@
 #include "Game/Managers/ChatManager.h"
 #include "Game/Services/AuthService.h"
 #include <boost/program_options.hpp>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include "protocol_generated.h"
 
 namespace asio = boost::asio; 
@@ -30,8 +32,7 @@ int main(int argc, char* argv[])
         ("port,p", po::value<unsigned short>()->default_value(8080), "Set Server Port.")
         ("io-threads", po::value<int>()->default_value(2), "Set number of network I/O threads.")
         ("logic-threads", po::value<int>()->default_value(4), "Set number of logic processing threads.")
-        ("auth-host", po::value<std::string>()->default_value("localhost"), "Auth server host (e.g., localhost, your-auth-server.com).")
-        ("auth-port", po::value<std::string>()->default_value("5278"), "Auth server port (e.g., 8080, 443).");
+        ("server-config", po::value<std::string>()->default_value("config/server_config.json"), "Server configuration file path.");
 
     po::variables_map vm;
     try
@@ -56,8 +57,28 @@ int main(int argc, char* argv[])
     unsigned short port = vm["port"].as<unsigned short>();
     int ioThreadCount = vm["io-threads"].as<int>();
     int logicThreadCount = vm["logic-threads"].as<int>();
-    std::string authHost = vm["auth-host"].as<std::string>();
-    std::string authPort = vm["auth-port"].as<std::string>();
+    std::string serverConfigPath = vm["server-config"].as<std::string>();
+
+    // Load server configuration
+    std::string authHost = "localhost";
+    std::string authPort = "5278";
+    
+    try {
+        std::ifstream serverConfigFile(serverConfigPath);
+        if (serverConfigFile.is_open()) {
+            nlohmann::json serverConfig;
+            serverConfigFile >> serverConfig;
+            
+            authHost = serverConfig["auth_server"]["host"].get<std::string>();
+            authPort = std::to_string(serverConfig["auth_server"]["port"].get<int>());
+            
+            LOG_INFO("Server config loaded from: {}", serverConfigPath);
+        } else {
+            LOG_WARN("Could not open server config file: {}, using defaults", serverConfigPath);
+        }
+    } catch (const std::exception& e) {
+        LOG_ERROR("Failed to load server config: {}, using defaults", e.what());
+    }
 
     LOG_INFO("Server configured: Port={}, IO Threads={}, Logic Threads={}", port, ioThreadCount, logicThreadCount);
     LOG_INFO("Auth Service configured: Host={}, Port={}", authHost, authPort);

@@ -81,8 +81,9 @@ namespace CppMMO
                 Game::PlayerDisconnectCommandData disconnectData;
                 disconnectData.playerId = playerId;
 
-                Game::GameCommand command{};
-                command.payload = disconnectData;
+                Game::GameCommand command;
+                command.commandId = 0;
+                command.payload = Game::GameCommandPayload{disconnectData};
                 command.senderSessionId = session->GetSessionId();
                 command.timestamp = Game::GetCurrentTimestamp();
 

@@ -22,7 +22,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /bigobj)
     target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Wno-maybe-uninitialized)
 endif()
 
 # 소스 파일 추가

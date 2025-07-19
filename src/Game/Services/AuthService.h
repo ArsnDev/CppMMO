@@ -30,7 +30,7 @@ namespace CppMMO
             {
             public:
                 AuthService(boost::asio::io_context& ioc, const std::string& auth_host, const std::string& auth_port);
-                void VerifySessionTicketAsync(const std::string& sessionTicket, VerifyCallback callback);
+                void VerifySessionTicketAsync(const std::string& sessionTicket, uint64_t playerId, VerifyCallback callback);
             private:
                 boost::asio::io_context& m_ioc;
                 std::string m_auth_host;
@@ -40,7 +40,7 @@ namespace CppMMO
                 {
                 public:
                     HttpRequestSession(boost::asio::io_context& ioc, const std::string& host, const std::string& port, VerifyCallback callback);
-                    void Run(const std::string& sessionTicket);
+                    void Run(const std::string& sessionTicket, uint64_t playerId);
                 private:
                     void OnResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results);
                     void OnConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type ep);

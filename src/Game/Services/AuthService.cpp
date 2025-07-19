@@ -14,9 +14,9 @@ namespace CppMMO
                 LOG_INFO("AuthService initialized for {}:{}", m_auth_host, m_auth_port);
             }
 
-            void AuthService::VerifySessionTicketAsync(const std::string& sessionTicket, VerifyCallback callback)
+            void AuthService::VerifySessionTicketAsync(const std::string& sessionTicket, uint64_t playerId, VerifyCallback callback)
             {
-                std::make_shared<HttpRequestSession>(m_ioc, m_auth_host, m_auth_port, std::move(callback))->Run(sessionTicket);
+                std::make_shared<HttpRequestSession>(m_ioc, m_auth_host, m_auth_port, std::move(callback))->Run(sessionTicket, playerId);
             }
 
             AuthService::HttpRequestSession::HttpRequestSession(boost::asio::io_context& ioc, const std::string& host, const std::string& port, VerifyCallback callback)
@@ -28,7 +28,7 @@ namespace CppMMO
             {
             }
 
-            void AuthService::HttpRequestSession::Run(const std::string& sessionTicket)
+            void AuthService::HttpRequestSession::Run(const std::string& sessionTicket, uint64_t playerId)
             {
                 m_req.version(11);
                 m_req.method(boost::beast::http::verb::post);
@@ -39,6 +39,7 @@ namespace CppMMO
 
                 nlohmann::json request_body;
                 request_body["SessionTicket"] = sessionTicket;
+                request_body["PlayerId"] = playerId;
                 m_req.body() = request_body.dump();
                 m_req.prepare_payload();
 

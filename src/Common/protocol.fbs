@@ -87,6 +87,7 @@ enum PacketId : ushort {
 // C_Login: Client requests to login
 table C_Login {
   session_ticket:string;
+  player_id:ulong; // 선택한 캐릭터 ID
   command_id:long;
 }
 

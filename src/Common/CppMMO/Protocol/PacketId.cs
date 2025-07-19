@@ -13,14 +13,14 @@ public enum PacketId : ushort
   S_LoginFailure = 3,
   C_Chat = 4,
   S_Chat = 5,
-  C_MoveInput = 6,
-  S_PlayerMoveState = 7,
-  C_ChangeZone = 8,
-  S_EnterZone = 9,
-  S_LeaveZone = 10,
-  S_PlayerEnterZone = 11,
-  S_PlayerLeaveZone = 12,
-  S_PlayerHpUpdate = 13,
+  C_PlayerInput = 10,
+  S_WorldSnapshot = 11,
+  S_StateCorrection = 12,
+  S_GameTick = 13,
+  C_EnterZone = 20,
+  S_ZoneEntered = 21,
+  S_PlayerJoined = 22,
+  S_PlayerLeft = 23,
 };
 
 

@@ -26,20 +26,24 @@ public struct C_Login : IFlatbufferObject
   public ArraySegment<byte>? GetSessionTicketBytes() { return __p.__vector_as_arraysegment(4); }
 #endif
   public byte[] GetSessionTicketArray() { return __p.__vector_as_array<byte>(4); }
-  public long CommandId { get { int o = __p.__offset(6); return o != 0 ? __p.bb.GetLong(o + __p.bb_pos) : (long)0; } }
+  public ulong PlayerId { get { int o = __p.__offset(6); return o != 0 ? __p.bb.GetUlong(o + __p.bb_pos) : (ulong)0; } }
+  public long CommandId { get { int o = __p.__offset(8); return o != 0 ? __p.bb.GetLong(o + __p.bb_pos) : (long)0; } }
 
   public static Offset<CppMMO.Protocol.C_Login> CreateC_Login(FlatBufferBuilder builder,
       StringOffset session_ticketOffset = default(StringOffset),
+      ulong player_id = 0,
       long command_id = 0) {
-    builder.StartTable(2);
+    builder.StartTable(3);
     C_Login.AddCommandId(builder, command_id);
+    C_Login.AddPlayerId(builder, player_id);
     C_Login.AddSessionTicket(builder, session_ticketOffset);
     return C_Login.EndC_Login(builder);
   }
 
-  public static void StartC_Login(FlatBufferBuilder builder) { builder.StartTable(2); }
+  public static void StartC_Login(FlatBufferBuilder builder) { builder.StartTable(3); }
   public static void AddSessionTicket(FlatBufferBuilder builder, StringOffset sessionTicketOffset) { builder.AddOffset(0, sessionTicketOffset.Value, 0); }
-  public static void AddCommandId(FlatBufferBuilder builder, long commandId) { builder.AddLong(1, commandId, 0); }
+  public static void AddPlayerId(FlatBufferBuilder builder, ulong playerId) { builder.AddUlong(1, playerId, 0); }
+  public static void AddCommandId(FlatBufferBuilder builder, long commandId) { builder.AddLong(2, commandId, 0); }
   public static Offset<CppMMO.Protocol.C_Login> EndC_Login(FlatBufferBuilder builder) {
     int o = builder.EndTable();
     return new Offset<CppMMO.Protocol.C_Login>(o);
@@ -53,7 +57,8 @@ static public class C_LoginVerify
   {
     return verifier.VerifyTableStart(tablePos)
       && verifier.VerifyString(tablePos, 4 /*SessionTicket*/, false)
-      && verifier.VerifyField(tablePos, 6 /*CommandId*/, 8 /*long*/, 8, false)
+      && verifier.VerifyField(tablePos, 6 /*PlayerId*/, 8 /*ulong*/, 8, false)
+      && verifier.VerifyField(tablePos, 8 /*CommandId*/, 8 /*long*/, 8, false)
       && verifier.VerifyTableEnd(tablePos);
   }
 }

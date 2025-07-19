@@ -1,25 +1,54 @@
 using AuthServer.Models;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.Data;
+using Dapper;
 
 namespace AuthServer.Repositories
 {
     public class PlayerRepository : IPlayerRepository
     {
-        private static readonly ConcurrentDictionary<int, Player> _players = new ConcurrentDictionary<int, Player>();
-        private static long _nextPlayerId = 1;
+        private readonly IDbConnection _dbConnection;
 
-        public Task<Player?> GetPlayerByUserIdAsync(int userId)
+        public PlayerRepository(IDbConnection dbConnection)
         {
-            _players.TryGetValue(userId, out var player);
-            return Task.FromResult(player);
+            _dbConnection = dbConnection;
         }
 
-        public Task<Player> CreatePlayerAsync(int userId, string playerName)
+        public async Task<Player?> GetPlayerByUserIdAsync(int userId)
         {
+            var sql = "SELECT * FROM players WHERE UserId = @UserId ORDER BY CreatedAt ASC LIMIT 1";
+            return await _dbConnection.QuerySingleOrDefaultAsync<Player>(sql, new { UserId = userId });
+        }
+
+        public async Task<List<Player>> GetPlayersByUserIdAsync(int userId)
+        {
+            var sql = "SELECT * FROM players WHERE UserId = @UserId ORDER BY CreatedAt ASC";
+            var players = await _dbConnection.QueryAsync<Player>(sql, new { UserId = userId });
+            return players.ToList();
+        }
+
+        public async Task<Player?> GetPlayerByIdAsync(long playerId)
+        {
+            var sql = "SELECT * FROM players WHERE PlayerId = @PlayerId";
+            return await _dbConnection.QuerySingleOrDefaultAsync<Player>(sql, new { PlayerId = playerId });
+        }
+
+        public async Task<bool> IsPlayerNameExistsAsync(string playerName)
+        {
+            var sql = "SELECT COUNT(*) FROM players WHERE Name = @Name";
+            var count = await _dbConnection.ExecuteScalarAsync<int>(sql, new { Name = playerName });
+            return count > 0;
+        }
+
+        public async Task<Player> CreatePlayerAsync(int userId, string playerName)
+        {
+            var sql = @"
+                INSERT INTO players (UserId, Name, PosX, PosY, Hp, MaxHp, CreatedAt, UpdatedAt) 
+                VALUES (@UserId, @Name, @PosX, @PosY, @Hp, @MaxHp, @CreatedAt, @UpdatedAt);
+                SELECT * FROM players WHERE PlayerId = LAST_INSERT_ID();
+            ";
+            
             var player = new Player
             {
-                PlayerId = Interlocked.Increment(ref _nextPlayerId),
                 UserId = userId,
                 Name = playerName,
                 PosX = 0,
@@ -29,8 +58,16 @@ namespace AuthServer.Repositories
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            _players.TryAdd(userId, player);
-            return Task.FromResult(player);
+
+            var result = await _dbConnection.QuerySingleAsync<Player>(sql, player);
+            return result;
+        }
+
+        public async Task<int> DeletePlayersByUserIdAsync(int userId)
+        {
+            var sql = "DELETE FROM players WHERE UserId = @UserId";
+            var affectedRows = await _dbConnection.ExecuteAsync(sql, new { UserId = userId });
+            return affectedRows;
         }
     }
 }

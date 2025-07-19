@@ -19,7 +19,7 @@ public struct PlayerInfo : IFlatbufferObject
   public void __init(int _i, ByteBuffer _bb) { __p = new Table(_i, _bb); }
   public PlayerInfo __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public long PlayerId { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetLong(o + __p.bb_pos) : (long)0; } }
+  public ulong PlayerId { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetUlong(o + __p.bb_pos) : (ulong)0; } }
   public string Name { get { int o = __p.__offset(6); return o != 0 ? __p.__string(o + __p.bb_pos) : null; } }
 #if ENABLE_SPAN_T
   public Span<byte> GetNameBytes() { return __p.__vector_as_span<byte>(6, 1); }
@@ -27,18 +27,24 @@ public struct PlayerInfo : IFlatbufferObject
   public ArraySegment<byte>? GetNameBytes() { return __p.__vector_as_arraysegment(6); }
 #endif
   public byte[] GetNameArray() { return __p.__vector_as_array<byte>(6); }
-  public CppMMO.Protocol.Vec2? Position { get { int o = __p.__offset(8); return o != 0 ? (CppMMO.Protocol.Vec2?)(new CppMMO.Protocol.Vec2()).__assign(__p.__indirect(o + __p.bb_pos), __p.bb) : null; } }
+  public CppMMO.Protocol.Vec3? Position { get { int o = __p.__offset(8); return o != 0 ? (CppMMO.Protocol.Vec3?)(new CppMMO.Protocol.Vec3()).__assign(__p.__indirect(o + __p.bb_pos), __p.bb) : null; } }
   public int Hp { get { int o = __p.__offset(10); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
   public int MaxHp { get { int o = __p.__offset(12); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
+  public int Mp { get { int o = __p.__offset(14); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
+  public int MaxMp { get { int o = __p.__offset(16); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
 
   public static Offset<CppMMO.Protocol.PlayerInfo> CreatePlayerInfo(FlatBufferBuilder builder,
-      long player_id = 0,
+      ulong player_id = 0,
       StringOffset nameOffset = default(StringOffset),
-      Offset<CppMMO.Protocol.Vec2> positionOffset = default(Offset<CppMMO.Protocol.Vec2>),
+      Offset<CppMMO.Protocol.Vec3> positionOffset = default(Offset<CppMMO.Protocol.Vec3>),
       int hp = 0,
-      int max_hp = 0) {
-    builder.StartTable(5);
+      int max_hp = 0,
+      int mp = 0,
+      int max_mp = 0) {
+    builder.StartTable(7);
     PlayerInfo.AddPlayerId(builder, player_id);
+    PlayerInfo.AddMaxMp(builder, max_mp);
+    PlayerInfo.AddMp(builder, mp);
     PlayerInfo.AddMaxHp(builder, max_hp);
     PlayerInfo.AddHp(builder, hp);
     PlayerInfo.AddPosition(builder, positionOffset);
@@ -46,12 +52,14 @@ public struct PlayerInfo : IFlatbufferObject
     return PlayerInfo.EndPlayerInfo(builder);
   }
 
-  public static void StartPlayerInfo(FlatBufferBuilder builder) { builder.StartTable(5); }
-  public static void AddPlayerId(FlatBufferBuilder builder, long playerId) { builder.AddLong(0, playerId, 0); }
+  public static void StartPlayerInfo(FlatBufferBuilder builder) { builder.StartTable(7); }
+  public static void AddPlayerId(FlatBufferBuilder builder, ulong playerId) { builder.AddUlong(0, playerId, 0); }
   public static void AddName(FlatBufferBuilder builder, StringOffset nameOffset) { builder.AddOffset(1, nameOffset.Value, 0); }
-  public static void AddPosition(FlatBufferBuilder builder, Offset<CppMMO.Protocol.Vec2> positionOffset) { builder.AddOffset(2, positionOffset.Value, 0); }
+  public static void AddPosition(FlatBufferBuilder builder, Offset<CppMMO.Protocol.Vec3> positionOffset) { builder.AddOffset(2, positionOffset.Value, 0); }
   public static void AddHp(FlatBufferBuilder builder, int hp) { builder.AddInt(3, hp, 0); }
   public static void AddMaxHp(FlatBufferBuilder builder, int maxHp) { builder.AddInt(4, maxHp, 0); }
+  public static void AddMp(FlatBufferBuilder builder, int mp) { builder.AddInt(5, mp, 0); }
+  public static void AddMaxMp(FlatBufferBuilder builder, int maxMp) { builder.AddInt(6, maxMp, 0); }
   public static Offset<CppMMO.Protocol.PlayerInfo> EndPlayerInfo(FlatBufferBuilder builder) {
     int o = builder.EndTable();
     return new Offset<CppMMO.Protocol.PlayerInfo>(o);
@@ -64,11 +72,13 @@ static public class PlayerInfoVerify
   static public bool Verify(Google.FlatBuffers.Verifier verifier, uint tablePos)
   {
     return verifier.VerifyTableStart(tablePos)
-      && verifier.VerifyField(tablePos, 4 /*PlayerId*/, 8 /*long*/, 8, false)
+      && verifier.VerifyField(tablePos, 4 /*PlayerId*/, 8 /*ulong*/, 8, false)
       && verifier.VerifyString(tablePos, 6 /*Name*/, false)
-      && verifier.VerifyTable(tablePos, 8 /*Position*/, CppMMO.Protocol.Vec2Verify.Verify, false)
+      && verifier.VerifyTable(tablePos, 8 /*Position*/, CppMMO.Protocol.Vec3Verify.Verify, false)
       && verifier.VerifyField(tablePos, 10 /*Hp*/, 4 /*int*/, 4, false)
       && verifier.VerifyField(tablePos, 12 /*MaxHp*/, 4 /*int*/, 4, false)
+      && verifier.VerifyField(tablePos, 14 /*Mp*/, 4 /*int*/, 4, false)
+      && verifier.VerifyField(tablePos, 16 /*MaxMp*/, 4 /*int*/, 4, false)
       && verifier.VerifyTableEnd(tablePos);
   }
 }
