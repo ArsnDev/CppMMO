@@ -40,9 +40,10 @@ namespace CppMMO
                 }
 
                 const std::string sessionTicket = c_login_packet->session_ticket()->str();
+                const uint64_t playerId = c_login_packet->player_id();
                 const int64_t commandId = c_login_packet->command_id();
 
-                LOG_INFO("[LoginPacketHandler] Processing login request for session ticket: '{}' from session: {}", sessionTicket, session->GetRemoteEndpoint().address().to_string());
+                LOG_INFO("[LoginPacketHandler] Processing login request for session ticket: '{}', playerId: {} from session: {}", sessionTicket, playerId, session->GetRemoteEndpoint().address().to_string());
 
                 if (!m_authService)
                 {
@@ -53,10 +54,10 @@ namespace CppMMO
 
                 std::weak_ptr<Network::ISession> weakSession = session;
 
-                m_authService->VerifySessionTicketAsync(sessionTicket,
-                    [this, weakSession, commandId, sessionTicket](const CppMMO::Game::Services::VerifyTicketResponse& authResponse)
+                m_authService->VerifySessionTicketAsync(sessionTicket, playerId,
+                    [this, weakSession, commandId, sessionTicket, playerId](const CppMMO::Game::Services::VerifyTicketResponse& authResponse)
                     {
-                        boost::asio::post(m_ioc, [this, weakSession, commandId, sessionTicket, authResponse]()
+                        boost::asio::post(m_ioc, [this, weakSession, commandId, sessionTicket, playerId, authResponse]()
                         {
                             std::shared_ptr<Network::ISession> session = weakSession.lock();
                             if (!session || !session->IsConnected())
@@ -94,7 +95,7 @@ namespace CppMMO
                             }
                         });
                     });
-                LOG_INFO("--- LoginPacketHandler: Initiated AuthService verification for session ticket '{}' ---", sessionTicket);
+                LOG_INFO("--- LoginPacketHandler: Initiated AuthService verification for session ticket '{}', playerId: {} ---", sessionTicket, playerId);
             }
 
             void LoginPacketHandler::SendLoginFailure(std::shared_ptr<Network::ISession> session, int errorCode, const std::string& errorMessage, int64_t commandId) const

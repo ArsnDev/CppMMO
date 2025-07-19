@@ -1,0 +1,10 @@
+{
+    "auth_server": {
+        "host": "authserver",
+        "port": 5278
+    },
+    "game_server": {
+        "host": "0.0.0.0",
+        "port": 8080
+    }
+}

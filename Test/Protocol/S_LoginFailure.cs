@@ -48,6 +48,38 @@ public struct S_LoginFailure : IFlatbufferObject
     int o = builder.EndTable();
     return new Offset<CppMMO.Protocol.S_LoginFailure>(o);
   }
+  public S_LoginFailureT UnPack() {
+    var _o = new S_LoginFailureT();
+    this.UnPackTo(_o);
+    return _o;
+  }
+  public void UnPackTo(S_LoginFailureT _o) {
+    _o.ErrorCode = this.ErrorCode;
+    _o.ErrorMessage = this.ErrorMessage;
+    _o.CommandId = this.CommandId;
+  }
+  public static Offset<CppMMO.Protocol.S_LoginFailure> Pack(FlatBufferBuilder builder, S_LoginFailureT _o) {
+    if (_o == null) return default(Offset<CppMMO.Protocol.S_LoginFailure>);
+    var _error_message = _o.ErrorMessage == null ? default(StringOffset) : builder.CreateString(_o.ErrorMessage);
+    return CreateS_LoginFailure(
+      builder,
+      _o.ErrorCode,
+      _error_message,
+      _o.CommandId);
+  }
+}
+
+public class S_LoginFailureT
+{
+  public int ErrorCode { get; set; }
+  public string ErrorMessage { get; set; }
+  public long CommandId { get; set; }
+
+  public S_LoginFailureT() {
+    this.ErrorCode = 0;
+    this.ErrorMessage = null;
+    this.CommandId = 0;
+  }
 }
 
 

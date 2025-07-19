@@ -22,13 +22,26 @@ namespace AuthServer.Repositories
         public async Task<User> CreateUserAsync(string username, string passwordHash)
         {
             var sql = @"
-                INSERT INTO users (Username, PasswordHash) 
-                VALUES (@Username, @PasswordHash);
+                INSERT INTO users (Username, PasswordHash, CreatedAt) 
+                VALUES (@Username, @PasswordHash, @CreatedAt);
                 SELECT * FROM users WHERE Id = LAST_INSERT_ID();
             ";
-            var newUserId = await _dbConnection.ExecuteScalarAsync<uint>(sql, new { Username = username, PasswordHash = passwordHash });
             
-            return (await GetUserByUsernameAsync(username))!;
+            var user = new { 
+                Username = username, 
+                PasswordHash = passwordHash, 
+                CreatedAt = DateTime.UtcNow 
+            };
+            
+            var result = await _dbConnection.QuerySingleAsync<User>(sql, user);
+            return result;
+        }
+
+        public async Task<bool> DeleteUserAsync(int userId)
+        {
+            var sql = "DELETE FROM users WHERE Id = @UserId";
+            var affectedRows = await _dbConnection.ExecuteAsync(sql, new { UserId = userId });
+            return affectedRows > 0;
         }
     }
 }

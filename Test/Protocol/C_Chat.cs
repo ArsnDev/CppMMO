@@ -44,6 +44,34 @@ public struct C_Chat : IFlatbufferObject
     int o = builder.EndTable();
     return new Offset<CppMMO.Protocol.C_Chat>(o);
   }
+  public C_ChatT UnPack() {
+    var _o = new C_ChatT();
+    this.UnPackTo(_o);
+    return _o;
+  }
+  public void UnPackTo(C_ChatT _o) {
+    _o.Message = this.Message;
+    _o.CommandId = this.CommandId;
+  }
+  public static Offset<CppMMO.Protocol.C_Chat> Pack(FlatBufferBuilder builder, C_ChatT _o) {
+    if (_o == null) return default(Offset<CppMMO.Protocol.C_Chat>);
+    var _message = _o.Message == null ? default(StringOffset) : builder.CreateString(_o.Message);
+    return CreateC_Chat(
+      builder,
+      _message,
+      _o.CommandId);
+  }
+}
+
+public class C_ChatT
+{
+  public string Message { get; set; }
+  public long CommandId { get; set; }
+
+  public C_ChatT() {
+    this.Message = null;
+    this.CommandId = 0;
+  }
 }
 
 

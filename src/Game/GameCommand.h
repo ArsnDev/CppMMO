@@ -100,7 +100,7 @@
         struct PlayerSpawnCommandData
         {
             uint64_t playerId = 0;
-            std::string playerName;
+            std::string playerName = "";
             Vec3 spawnPosition{};
             int hp = 100;
             int maxHp = 100;

@@ -64,7 +64,7 @@ services:
       - redis # Redis 의존성
     networks:
       - mmo_network # mmo_network에 연결
-    command: ["./CppMMO_Deployment", "--port", "8080", "--auth-host", "authserver", "--auth-port", "5278"]
+    command: ["./CppMMO_Deployment", "--port", "8080", "--server-config", "config/server_config.docker.json"]
     volumes:
       - "./logs:/app/logs" # 로그 디렉토리 마운트
 

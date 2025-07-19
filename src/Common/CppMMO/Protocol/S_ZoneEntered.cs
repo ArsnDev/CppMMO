@@ -9,36 +9,33 @@ using global::System;
 using global::System.Collections.Generic;
 using global::Google.FlatBuffers;
 
-public struct S_EnterZone : IFlatbufferObject
+public struct S_ZoneEntered : IFlatbufferObject
 {
   private Table __p;
   public ByteBuffer ByteBuffer { get { return __p.bb; } }
   public static void ValidateVersion() { FlatBufferConstants.FLATBUFFERS_25_2_10(); }
-  public static S_EnterZone GetRootAsS_EnterZone(ByteBuffer _bb) { return GetRootAsS_EnterZone(_bb, new S_EnterZone()); }
-  public static S_EnterZone GetRootAsS_EnterZone(ByteBuffer _bb, S_EnterZone obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public static S_ZoneEntered GetRootAsS_ZoneEntered(ByteBuffer _bb) { return GetRootAsS_ZoneEntered(_bb, new S_ZoneEntered()); }
+  public static S_ZoneEntered GetRootAsS_ZoneEntered(ByteBuffer _bb, S_ZoneEntered obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
   public void __init(int _i, ByteBuffer _bb) { __p = new Table(_i, _bb); }
-  public S_EnterZone __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+  public S_ZoneEntered __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int ZoneId { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
   public CppMMO.Protocol.PlayerInfo? MyPlayer { get { int o = __p.__offset(6); return o != 0 ? (CppMMO.Protocol.PlayerInfo?)(new CppMMO.Protocol.PlayerInfo()).__assign(__p.__indirect(o + __p.bb_pos), __p.bb) : null; } }
   public CppMMO.Protocol.PlayerInfo? OtherPlayers(int j) { int o = __p.__offset(8); return o != 0 ? (CppMMO.Protocol.PlayerInfo?)(new CppMMO.Protocol.PlayerInfo()).__assign(__p.__indirect(__p.__vector(o) + j * 4), __p.bb) : null; }
   public int OtherPlayersLength { get { int o = __p.__offset(8); return o != 0 ? __p.__vector_len(o) : 0; } }
-  public long PlayerId { get { int o = __p.__offset(10); return o != 0 ? __p.bb.GetLong(o + __p.bb_pos) : (long)0; } }
 
-  public static Offset<CppMMO.Protocol.S_EnterZone> CreateS_EnterZone(FlatBufferBuilder builder,
+  public static Offset<CppMMO.Protocol.S_ZoneEntered> CreateS_ZoneEntered(FlatBufferBuilder builder,
       int zone_id = 0,
       Offset<CppMMO.Protocol.PlayerInfo> my_playerOffset = default(Offset<CppMMO.Protocol.PlayerInfo>),
-      VectorOffset other_playersOffset = default(VectorOffset),
-      long player_id = 0) {
-    builder.StartTable(4);
-    S_EnterZone.AddPlayerId(builder, player_id);
-    S_EnterZone.AddOtherPlayers(builder, other_playersOffset);
-    S_EnterZone.AddMyPlayer(builder, my_playerOffset);
-    S_EnterZone.AddZoneId(builder, zone_id);
-    return S_EnterZone.EndS_EnterZone(builder);
+      VectorOffset other_playersOffset = default(VectorOffset)) {
+    builder.StartTable(3);
+    S_ZoneEntered.AddOtherPlayers(builder, other_playersOffset);
+    S_ZoneEntered.AddMyPlayer(builder, my_playerOffset);
+    S_ZoneEntered.AddZoneId(builder, zone_id);
+    return S_ZoneEntered.EndS_ZoneEntered(builder);
   }
 
-  public static void StartS_EnterZone(FlatBufferBuilder builder) { builder.StartTable(4); }
+  public static void StartS_ZoneEntered(FlatBufferBuilder builder) { builder.StartTable(3); }
   public static void AddZoneId(FlatBufferBuilder builder, int zoneId) { builder.AddInt(0, zoneId, 0); }
   public static void AddMyPlayer(FlatBufferBuilder builder, Offset<CppMMO.Protocol.PlayerInfo> myPlayerOffset) { builder.AddOffset(1, myPlayerOffset.Value, 0); }
   public static void AddOtherPlayers(FlatBufferBuilder builder, VectorOffset otherPlayersOffset) { builder.AddOffset(2, otherPlayersOffset.Value, 0); }
@@ -47,15 +44,14 @@ public struct S_EnterZone : IFlatbufferObject
   public static VectorOffset CreateOtherPlayersVectorBlock(FlatBufferBuilder builder, ArraySegment<Offset<CppMMO.Protocol.PlayerInfo>> data) { builder.StartVector(4, data.Count, 4); builder.Add(data); return builder.EndVector(); }
   public static VectorOffset CreateOtherPlayersVectorBlock(FlatBufferBuilder builder, IntPtr dataPtr, int sizeInBytes) { builder.StartVector(1, sizeInBytes, 1); builder.Add<Offset<CppMMO.Protocol.PlayerInfo>>(dataPtr, sizeInBytes); return builder.EndVector(); }
   public static void StartOtherPlayersVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(4, numElems, 4); }
-  public static void AddPlayerId(FlatBufferBuilder builder, long playerId) { builder.AddLong(3, playerId, 0); }
-  public static Offset<CppMMO.Protocol.S_EnterZone> EndS_EnterZone(FlatBufferBuilder builder) {
+  public static Offset<CppMMO.Protocol.S_ZoneEntered> EndS_ZoneEntered(FlatBufferBuilder builder) {
     int o = builder.EndTable();
-    return new Offset<CppMMO.Protocol.S_EnterZone>(o);
+    return new Offset<CppMMO.Protocol.S_ZoneEntered>(o);
   }
 }
 
 
-static public class S_EnterZoneVerify
+static public class S_ZoneEnteredVerify
 {
   static public bool Verify(Google.FlatBuffers.Verifier verifier, uint tablePos)
   {
@@ -63,7 +59,6 @@ static public class S_EnterZoneVerify
       && verifier.VerifyField(tablePos, 4 /*ZoneId*/, 4 /*int*/, 4, false)
       && verifier.VerifyTable(tablePos, 6 /*MyPlayer*/, CppMMO.Protocol.PlayerInfoVerify.Verify, false)
       && verifier.VerifyVectorOfTables(tablePos, 8 /*OtherPlayers*/, CppMMO.Protocol.PlayerInfoVerify.Verify, false)
-      && verifier.VerifyField(tablePos, 10 /*PlayerId*/, 8 /*long*/, 8, false)
       && verifier.VerifyTableEnd(tablePos);
   }
 }

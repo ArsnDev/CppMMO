@@ -13,14 +13,14 @@ public enum Packet : byte
   S_LoginFailure = 3,
   C_Chat = 4,
   S_Chat = 5,
-  C_MoveInput = 6,
-  S_PlayerMoveState = 7,
-  S_PlayerHpUpdate = 8,
-  C_ChangeZone = 9,
-  S_EnterZone = 10,
-  S_LeaveZone = 11,
-  S_PlayerEnterZone = 12,
-  S_PlayerLeaveZone = 13,
+  C_PlayerInput = 6,
+  S_WorldSnapshot = 7,
+  S_StateCorrection = 8,
+  S_GameTick = 9,
+  C_EnterZone = 10,
+  S_ZoneEntered = 11,
+  S_PlayerJoined = 12,
+  S_PlayerLeft = 13,
 };
 
 
@@ -47,29 +47,29 @@ static public class PacketVerify
       case Packet.S_Chat:
         result = CppMMO.Protocol.S_ChatVerify.Verify(verifier, tablePos);
         break;
-      case Packet.C_MoveInput:
-        result = CppMMO.Protocol.C_MoveInputVerify.Verify(verifier, tablePos);
+      case Packet.C_PlayerInput:
+        result = CppMMO.Protocol.C_PlayerInputVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_PlayerMoveState:
-        result = CppMMO.Protocol.S_PlayerMoveStateVerify.Verify(verifier, tablePos);
+      case Packet.S_WorldSnapshot:
+        result = CppMMO.Protocol.S_WorldSnapshotVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_PlayerHpUpdate:
-        result = CppMMO.Protocol.S_PlayerHpUpdateVerify.Verify(verifier, tablePos);
+      case Packet.S_StateCorrection:
+        result = CppMMO.Protocol.S_StateCorrectionVerify.Verify(verifier, tablePos);
         break;
-      case Packet.C_ChangeZone:
-        result = CppMMO.Protocol.C_ChangeZoneVerify.Verify(verifier, tablePos);
+      case Packet.S_GameTick:
+        result = CppMMO.Protocol.S_GameTickVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_EnterZone:
-        result = CppMMO.Protocol.S_EnterZoneVerify.Verify(verifier, tablePos);
+      case Packet.C_EnterZone:
+        result = CppMMO.Protocol.C_EnterZoneVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_LeaveZone:
-        result = CppMMO.Protocol.S_LeaveZoneVerify.Verify(verifier, tablePos);
+      case Packet.S_ZoneEntered:
+        result = CppMMO.Protocol.S_ZoneEnteredVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_PlayerEnterZone:
-        result = CppMMO.Protocol.S_PlayerEnterZoneVerify.Verify(verifier, tablePos);
+      case Packet.S_PlayerJoined:
+        result = CppMMO.Protocol.S_PlayerJoinedVerify.Verify(verifier, tablePos);
         break;
-      case Packet.S_PlayerLeaveZone:
-        result = CppMMO.Protocol.S_PlayerLeaveZoneVerify.Verify(verifier, tablePos);
+      case Packet.S_PlayerLeft:
+        result = CppMMO.Protocol.S_PlayerLeftVerify.Verify(verifier, tablePos);
         break;
       default: result = true;
         break;

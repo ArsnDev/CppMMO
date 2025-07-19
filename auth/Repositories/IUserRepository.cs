@@ -6,5 +6,6 @@ namespace AuthServer.Repositories
     {
         Task<User?> GetUserByUsernameAsync(string username);
         Task<User> CreateUserAsync(string username, string passwordHash);
+        Task<bool> DeleteUserAsync(int userId);
     }
 }
