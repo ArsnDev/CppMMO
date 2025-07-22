@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <thread> // For std::thread::hardware_concurrency()
 
 namespace CppMMO{
     namespace Utils
@@ -35,7 +36,8 @@ namespace CppMMO{
                     try
                     {
                         // 1. Create a thread pool for async logging
-                        spdlog::init_thread_pool(8192, 1);
+                        // Consider making thread count configurable for high-load scenarios
+                        spdlog::init_thread_pool(8192, std::thread::hardware_concurrency() > 4 ? 2 : 1);
 
                         // 2. Create sinks
                         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
