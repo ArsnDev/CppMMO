@@ -80,7 +80,7 @@ namespace CppMMO
             m_writeQueue.enqueue(std::move(packetToSend));
 
             m_timer.cancel_one();
-            LOG_INFO("Session {}: Packet of total {} bytes (body {}) added to write queue.", m_sessionId, totalPacketLength, bodyLength);
+            LOG_DEBUG("Session {}: Packet of total {} bytes (body {}) added to write queue.", m_sessionId, totalPacketLength, bodyLength);
         }
 
         uint64_t Session::GetPlayerId() const

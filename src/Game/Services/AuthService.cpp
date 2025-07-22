@@ -143,7 +143,7 @@ namespace CppMMO
                 response.success = false;
 
                 LOG_INFO("AuthService::HttpRequestSession: Received response from AuthServer. Status: {}", m_res.result_int());
-                LOG_INFO("Response Body: {}", m_res.body());
+                LOG_DEBUG("AuthService: Response received (body length: {} bytes)", m_res.body().length());
 
                 try
                 {

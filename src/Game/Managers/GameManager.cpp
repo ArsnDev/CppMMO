@@ -457,7 +457,7 @@ namespace CppMMO
                             session->Send(std::span<const std::byte>(
                                 reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
                                 builder.GetSize()));
-                            LOG_INFO("Sent S_WorldSnapshot to Player {} (Session {})", playerId, player.GetSessionId());
+                            LOG_DEBUG("Sent S_WorldSnapshot to Player {} (Session {})", playerId, player.GetSessionId());
                         }
                     }
                 }
