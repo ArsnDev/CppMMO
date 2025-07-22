@@ -122,7 +122,7 @@ namespace CppMMO
         void JobProcessor::ProcessJobPacket(const Job& job, const Protocol::UnifiedPacket* unifiedPacket)
         {
             Protocol::PacketId packetId = unifiedPacket->id();
-            LOG_INFO("JobProcessor: Received PacketId {} from Session {}", static_cast<int>(packetId), job.session->GetSessionId());
+            LOG_DEBUG("JobProcessor: Received PacketId {} from Session {}", static_cast<int>(packetId), job.session->GetSessionId());
             bool isNonGamePacket = false;
             switch (packetId)
             {
@@ -168,7 +168,7 @@ namespace CppMMO
                                 playerInputCommandData.sequenceNumber = c_player_input_packet->sequence_number();
                                 gameCommand.payload = playerInputCommandData;
                                 m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_INFO("In-game PacketId {} (C_PlayerInput) pushed to GameLogicQueue. InputFlags: {}, Seq: {}", static_cast<int>(packetId), c_player_input_packet->input_flags(), c_player_input_packet->sequence_number());
+                                LOG_DEBUG("In-game PacketId {} (C_PlayerInput) pushed to GameLogicQueue. InputFlags: {}, Seq: {}", static_cast<int>(packetId), c_player_input_packet->input_flags(), c_player_input_packet->sequence_number());
                             }
                             else
                             {

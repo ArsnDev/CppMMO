@@ -41,10 +41,10 @@ namespace CppMMO{
 
                         // 2. Create sinks
                         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-                        console_sink->set_level(spdlog::level::info);
+                        console_sink->set_level(spdlog::level::warn);
                         console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
                     
-                        auto daily_file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>("../../../../logs/server.log", 0, 0, false, 30);
+                        auto daily_file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>("./logs/server.log", 0, 0, false, 30);
                         daily_file_sink->set_level(spdlog::level::debug);
                         daily_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%s:%#] %v");
                     
