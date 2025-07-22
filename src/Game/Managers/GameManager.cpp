@@ -122,18 +122,22 @@ namespace CppMMO
              */
             Vec3 GameManager::GetSpawnPosition() const
             {
+                // Fixed spawn position (map center)
+                float centerX = m_mapWidth * 0.5f;   // 100.0f (200*0.5)
+                float centerY = m_mapHeight * 0.5f;  // 100.0f (200*0.5)
+                
+                // All players spawn at the same location
+                return Vec3(centerX, centerY, 0.0f);
+                
+                // Original random spawn code (commented out)
+                /*
                 static std::random_device rd;
                 static std::mt19937 gen(rd());
-                
-                // 맵 중앙 근처에서 스폰 (20% 범위)
-                float centerX = m_mapWidth * 0.5f;
-                float centerY = m_mapHeight * 0.5f;
                 float spawnRange = std::min(m_mapWidth, m_mapHeight) * 0.1f;
-                
                 std::uniform_real_distribution<float> disX(centerX - spawnRange, centerX + spawnRange);
                 std::uniform_real_distribution<float> disY(centerY - spawnRange, centerY + spawnRange);
-                
                 return Vec3(disX(gen), disY(gen), 0.0f);
+                */
             }
 
             /**
@@ -285,6 +289,13 @@ namespace CppMMO
                     return;
                 }
                 
+                // PlayerDisconnectCommandData bypasses session validation (connection already terminated)
+                if (std::holds_alternative<PlayerDisconnectCommandData>(command.payload))
+                {
+                    HandlePlayerDisconnect(std::get<PlayerDisconnectCommandData>(command.payload), nullptr);
+                    return;
+                }
+                
                 std::shared_ptr<Network::ISession> session = m_sessionManager->GetSession(command.senderSessionId);
                 if (!session)
                 {
@@ -302,10 +313,6 @@ namespace CppMMO
                     else if constexpr (std::is_same_v<T, EnterZoneCommandData>)
                     {
                         HandleEnterZone(arg, session);
-                    }
-                    else if constexpr (std::is_same_v<T, PlayerDisconnectCommandData>)
-                    {
-                        HandlePlayerDisconnect(arg, session);
                     }
                     else
                     {
@@ -339,7 +346,7 @@ namespace CppMMO
                 const Vec3& direction = InputFlagsToDirection(data.inputFlags);
                 Vec3 velocity = direction*m_moveSpeed;
                 player.SetVelocity(velocity);
-                LOG_DEBUG("Player {} input: flags={}, vel=({:.2f},{:.2f})",
+                LOG_INFO("Player {} input: flags={}, vel=({:.2f},{:.2f})",
                     data.playerId, data.inputFlags, velocity.x, velocity.y);
             }
 
@@ -359,6 +366,7 @@ namespace CppMMO
                 
                 Vec3 spawnPosition = GetSpawnPosition();
                 Models::Player newPlayer(data.playerId, "Player_" + std::to_string(data.playerId), spawnPosition);
+                newPlayer.SetSessionId(data.sessionId);  // Set session ID
                 m_world->AddPlayer(std::move(newPlayer));
 
                 m_quadTree->Insert(data.playerId, spawnPosition);
@@ -439,12 +447,18 @@ namespace CppMMO
                 
                 for (uint64_t playerId : playerIds)
                 {
-                    auto session = m_sessionManager->GetSession(playerId);
-                    if (session && session->IsConnected())
+                    auto playerOpt = m_world->GetPlayer(playerId);
+                    if (playerOpt.has_value())
                     {
-                        session->Send(std::span<const std::byte>(
-                            reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
-                            builder.GetSize()));
+                        const auto& player = playerOpt.value().get();
+                        auto session = m_sessionManager->GetSession(player.GetSessionId());
+                        if (session && session->IsConnected())
+                        {
+                            session->Send(std::span<const std::byte>(
+                                reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
+                                builder.GetSize()));
+                            LOG_INFO("Sent S_WorldSnapshot to Player {} (Session {})", playerId, player.GetSessionId());
+                        }
                     }
                 }
             }
@@ -516,22 +530,22 @@ namespace CppMMO
             Vec3 GameManager::InputFlagsToDirection(uint8_t inputFlags) const
             {
                 static constexpr Vec3 DIRECTION_TABLE[16] = {
-                    {0.0f, 0.0f, 0.0f},                    // 0000: 없음
-                    {0.0f, -1.0f, 0.0f},                   // 0001: W
-                    {0.0f, 1.0f, 0.0f},                    // 0010: S  
-                    {0.0f, 0.0f, 0.0f},                    // 0011: W+S (상쇄)
-                    {-1.0f, 0.0f, 0.0f},                   // 0100: A
-                    {-0.7071067f, -0.7071067f, 0.0f},      // 0101: W+A
-                    {-0.7071067f, 0.7071067f, 0.0f},       // 0110: S+A
-                    {-1.0f, 0.0f, 0.0f},                   // 0111: W+S+A (A만)
-                    {1.0f, 0.0f, 0.0f},                    // 1000: D
-                    {0.7071067f, -0.7071067f, 0.0f},       // 1001: W+D
-                    {0.7071067f, 0.7071067f, 0.0f},        // 1010: S+D
-                    {1.0f, 0.0f, 0.0f},                    // 1011: W+S+D (D만)
-                    {0.0f, 0.0f, 0.0f},                    // 1100: A+D (상쇄)
-                    {0.0f, -1.0f, 0.0f},                   // 1101: W+A+D (W만)
-                    {0.0f, 1.0f, 0.0f},                    // 1110: S+A+D (S만)
-                    {0.0f, 0.0f, 0.0f}                     // 1111: 모든 방향 (상쇄)
+                    {0.0f, 0.0f, 0.0f},                    // 0000: None
+                    {0.0f, 1.0f, 0.0f},                    // 0001: W (Up)
+                    {0.0f, -1.0f, 0.0f},                   // 0010: S (Down)
+                    {0.0f, 0.0f, 0.0f},                    // 0011: W+S (Cancel out)
+                    {-1.0f, 0.0f, 0.0f},                   // 0100: A (Left)
+                    {-0.7071067f, 0.7071067f, 0.0f},       // 0101: W+A (Up-Left)
+                    {-0.7071067f, -0.7071067f, 0.0f},      // 0110: S+A (Down-Left)
+                    {-1.0f, 0.0f, 0.0f},                   // 0111: W+S+A (A only)
+                    {1.0f, 0.0f, 0.0f},                    // 1000: D (Right)
+                    {0.7071067f, 0.7071067f, 0.0f},        // 1001: W+D (Up-Right)
+                    {0.7071067f, -0.7071067f, 0.0f},       // 1010: S+D (Down-Right)
+                    {1.0f, 0.0f, 0.0f},                    // 1011: W+S+D (D only)
+                    {0.0f, 0.0f, 0.0f},                    // 1100: A+D (Cancel out)
+                    {0.0f, 1.0f, 0.0f},                    // 1101: W+A+D (W only)
+                    {0.0f, -1.0f, 0.0f},                   // 1110: S+A+D (S only)
+                    {0.0f, 0.0f, 0.0f}                     // 1111: All directions (Cancel out)
                 };
                 
                 return DIRECTION_TABLE[inputFlags & 0x0F];
@@ -569,7 +583,7 @@ namespace CppMMO
 
                 for (const auto& [otherPlayerId, otherPlayer] : m_world->GetAllPlayers()) {
                     if (otherPlayerId != playerId && otherPlayer.IsActive()) {
-                        auto session = m_sessionManager->GetSession(otherPlayerId);
+                        auto session = m_sessionManager->GetSession(otherPlayer.GetSessionId());
                         if (session && session->IsConnected()) {
                             session->Send(std::span<const std::byte>(
                                 reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
@@ -602,7 +616,7 @@ namespace CppMMO
 
                 for (const auto& [otherPlayerId, otherPlayer] : m_world->GetAllPlayers()) {
                     if (otherPlayerId != playerId && otherPlayer.IsActive()) {
-                        auto session = m_sessionManager->GetSession(otherPlayerId);
+                        auto session = m_sessionManager->GetSession(otherPlayer.GetSessionId());
                         if (session && session->IsConnected()) {
                             session->Send(std::span<const std::byte>(
                                 reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 

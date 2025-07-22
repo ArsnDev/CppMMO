@@ -70,7 +70,7 @@ namespace CppMMO
             std::vector<std::byte> packetToSend;
             packetToSend.reserve(totalPacketLength);
             
-            // 리틀 엔디안으로 전송 (클라이언트와 일치)
+            // Send in little endian format (consistent with client)
             packetToSend.insert(packetToSend.end(),
                                 reinterpret_cast<const std::byte*>(&bodyLength),
                                 reinterpret_cast<const std::byte*>(&bodyLength) + sizeof(uint32_t));
@@ -111,7 +111,7 @@ namespace CppMMO
                     uint32_t bodyLength;
                     std::memcpy(&bodyLength, m_readHeader.data(), sizeof(uint32_t));
                     
-                    // 헤더 값 디버깅
+                    // Debug header value
                     LOG_DEBUG("Session {}: Raw header bytes: {:02x} {:02x} {:02x} {:02x}", 
                              m_sessionId, 
                              static_cast<unsigned char>(m_readHeader[0]),
@@ -119,11 +119,11 @@ namespace CppMMO
                              static_cast<unsigned char>(m_readHeader[2]),
                              static_cast<unsigned char>(m_readHeader[3]));
                     
-                    // FlatBuffers SizedByteArray()는 리틀 엔디안으로 전송됨
-                    // 서버에서 그대로 사용 (호스트 바이트 순서 = 리틀 엔디안)
+                    // FlatBuffers SizedByteArray() is transmitted in little endian
+                    // Used as-is on server (host byte order = little endian)
                     LOG_DEBUG("Session {}: Header body length (little endian): {}", m_sessionId, bodyLength);
                     
-                    // 합리적인 범위 체크
+                    // Reasonable range check
                     if (bodyLength == 0 || bodyLength > 100000)
                     {
                         LOG_ERROR("Session {}: Invalid header value: {}", m_sessionId, bodyLength);
@@ -146,7 +146,7 @@ namespace CppMMO
                         LOG_DEBUG("Session {}: Received packet - Header: {} bytes, Body: {} bytes", 
                                  m_sessionId, m_readHeader.size(), m_readBody.size());
                         
-                        // 디버깅용 hex dump (첫 16바이트)
+                        // Debug hex dump (first 16 bytes)
                         std::string hexDump;
                         for(size_t i = 0; i < std::min(m_readBody.size(), size_t(16)); ++i) {
                             hexDump += fmt::format("{:02x} ", static_cast<unsigned char>(m_readBody[i]));

@@ -1,6 +1,6 @@
 #pragma once
 
-// ========================[ 표준 라이브러리 ]========================
+// ========================[ Standard Libraries ]========================
 #include <iostream>
 #include <string>
 #include <vector>
@@ -22,7 +22,7 @@
 #include <future>
 #include <coroutine>
 
-// ========================[ Boost 라이브러리 ]========================
+// ========================[ Boost Libraries ]========================
 #include <boost/system/error_code.hpp>
 #include <boost/version.hpp>
 
@@ -36,16 +36,16 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/experimental/awaitable_operators.hpp>
 
-// ========================[ concurrentqueue 라이브러리 ]========================
+// ========================[ concurrentqueue Library ]========================
 #include <concurrentqueue.h>
 
-// ========================[ Spdlog 라이브러리 ]========================
+// ========================[ Spdlog Library ]========================
 #include "Utils/Logger.h"
 
-// ========================[ Redis++ 라이브러리 ]========================
-// Redis++ 헤더는 개별 파일에서 필요시 include
+// ========================[ Redis++ Library ]========================
+// Redis++ headers are included individually in files as needed
 // #include <sw/redis++/redis++.h>
 
-// ========================[ FlatBuffers 라이브러리 ]========================
+// ========================[ FlatBuffers Library ]========================
 #include <flatbuffers/flatbuffers.h>
-// 각 .cpp 파일에서 필요할 때 직접 #include "protocol_generated.h"
+// Include "protocol_generated.h" directly in individual .cpp files as needed

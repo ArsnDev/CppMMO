@@ -57,6 +57,9 @@ namespace CppMMO
                 // === Connection State ===
                 bool IsActive() const { return m_isActive; }
                 void SetActive(bool active);
+                
+                uint64_t GetSessionId() const { return m_sessionId; }
+                void SetSessionId(uint64_t sessionId) { m_sessionId = sessionId; }
                 bool ShouldRemove() const;
                 
                 // === Game State ===
@@ -92,6 +95,7 @@ namespace CppMMO
                 
                 // === Connection State ===
                 bool m_isActive = true;
+                uint64_t m_sessionId = 0;
                 std::chrono::steady_clock::time_point m_disconnectTime;
                 
                 // === Game State ===

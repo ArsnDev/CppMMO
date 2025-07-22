@@ -122,6 +122,7 @@ namespace CppMMO
         void JobProcessor::ProcessJobPacket(const Job& job, const Protocol::UnifiedPacket* unifiedPacket)
         {
             Protocol::PacketId packetId = unifiedPacket->id();
+            LOG_INFO("JobProcessor: Received PacketId {} from Session {}", static_cast<int>(packetId), job.session->GetSessionId());
             bool isNonGamePacket = false;
             switch (packetId)
             {
@@ -167,11 +168,30 @@ namespace CppMMO
                                 playerInputCommandData.sequenceNumber = c_player_input_packet->sequence_number();
                                 gameCommand.payload = playerInputCommandData;
                                 m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
-                                LOG_DEBUG("In-game PacketId {} (C_PlayerInput) pushed to GameLogicQueue.", static_cast<int>(packetId));
+                                LOG_INFO("In-game PacketId {} (C_PlayerInput) pushed to GameLogicQueue. InputFlags: {}, Seq: {}", static_cast<int>(packetId), c_player_input_packet->input_flags(), c_player_input_packet->sequence_number());
                             }
                             else
                             {
                                 LOG_ERROR("Failed to get C_PlayerInput packet data from UnifiedPacket in JobProcessor.");
+                            }
+                            break;
+                        }
+                        case Protocol::PacketId_C_EnterZone:
+                        {
+                            const Protocol::C_EnterZone* c_enter_zone_packet = static_cast<const Protocol::C_EnterZone*>(unifiedPacket->data());
+                            if (c_enter_zone_packet)
+                            {
+                                Game::EnterZoneCommandData enterZoneCommandData;
+                                enterZoneCommandData.playerId = job.session->GetPlayerId();
+                                enterZoneCommandData.zoneId = c_enter_zone_packet->zone_id();
+                                enterZoneCommandData.sessionId = job.session->GetSessionId();
+                                gameCommand.payload = enterZoneCommandData;
+                                m_gameLogicQueue->PushGameCommand(std::move(gameCommand));
+                                LOG_DEBUG("In-game PacketId {} (C_EnterZone) pushed to GameLogicQueue.", static_cast<int>(packetId));
+                            }
+                            else
+                            {
+                                LOG_ERROR("Failed to get C_EnterZone packet data from UnifiedPacket in JobProcessor.");
                             }
                             break;
                         }

@@ -67,6 +67,7 @@ services:
     command: ["./CppMMO_Deployment", "--port", "8080", "--server-config", "config/server_config.docker.json"]
     volumes:
       - "./logs:/app/logs" # 로그 디렉토리 마운트
+      - "./config:/app/config" # 설정 파일 디렉토리 마운트
 
 # 서비스 간 통신을 위한 사용자 정의 네트워크
 networks:
