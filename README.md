@@ -24,7 +24,7 @@ C++20, Boost.Asio, FlatBuffers를 기반으로 제작된 고성능 현대적 MMO
 - **존 시스템**: 동적 플레이어 입장/퇴장 관리
 - **채팅 시스템**: Redis 기반 50 유닛 범위 채팅
 - **입력 시스템**: WASD 이동, 시퀀스 번호 검증
-- **재연결 시스템**: 5분 타임아웃 기반 재연결 지원
+- **재연결 시스템**: 5분 타임아웃 기반 재연결 지원 (플레이어 상태 유지)
 
 ### ✅ **네트워크 & 인증**
 - **FlatBuffers 프로토콜**: 효율적인 바이너리 직렬화
@@ -141,12 +141,15 @@ table UnifiedPacket {
 - `S_PlayerLeft (23)`: 플레이어 퇴장 알림
 
 ### **입력 시스템**
-WASD 입력은 비트 플래그로 처리됩니다:
+WASD 입력은 비트 플래그로 처리되며, 서버에서 실시간 검증됩니다:
 ```cpp
-W = 1    // 0001
-S = 2    // 0010  
-A = 4    // 0100
-D = 8    // 1000
+W = 1    // 0001 (북쪽)
+S = 2    // 0010 (남쪽)
+A = 4    // 0100 (서쪽)  
+D = 8    // 1000 (동쪽)
+
+// 대각선 이동 예시
+W+D = 9  // 0001 + 1000 = 1001 (북동쪽, 정규화됨)
 ```
 
 ## ⚙️ **서버 설정**
@@ -181,9 +184,11 @@ D = 8    // 1000
 
 ## 🎯 **클라이언트 개발 가이드**
 
-### **📚 제공 문서**
-- **[SERVER_DOCUMENTATION.md](SERVER_DOCUMENTATION.md)**: 서버 전체 가이드
-- **[PROTOCOL_REFERENCE.md](PROTOCOL_REFERENCE.md)**: FlatBuffers 프로토콜 완전 가이드
+### **📚 개발 참고사항**
+서버는 완전 구현되었으며, 클라이언트 개발 시 아래 디렉토리에서 프로토콜 파일을 참조하세요:
+- **Protocol 파일**: `src/Common/protocol.fbs` (FlatBuffers 스키마)
+- **생성된 헤더**: `src/Common/protocol_generated.h` (C++ 전용)
+- **Unity 프로토콜**: `Protocol/CppMMO/Protocol/` (C# 클래스들)
 
 ### **Unity 클라이언트 개발 순서**
 1. **FlatBuffers Unity 패키지 설치**
@@ -234,11 +239,10 @@ CppMMO/
 ├── auth/                         # .NET 인증 서버
 ├── config/                       # 설정 파일
 │   └── game_config.json          # 게임 설정
-├── docker-compose.yml            # Docker 컨테이너 설정
 ├── Dockerfile                    # 게임 서버 Docker 이미지
+├── docker-compose.yml            # 서비스 컨테이너 설정
+├── init.sql                     # MySQL 초기화 스크립트
 ├── CMakeLists.txt               # CMake 빌드 설정
-├── SERVER_DOCUMENTATION.md      # 서버 가이드 문서
-├── PROTOCOL_REFERENCE.md        # 프로토콜 참조 문서
 └── README.md                    # 이 파일
 ```
 
@@ -257,10 +261,12 @@ docker-compose logs cppmmo_server | grep -E "(Login|Player|Zone|Input)"
 ```
 
 ### **성능 모니터링**
-- **동시 접속자**: 테스트 완료 (다중 세션 지원)
-- **메모리 사용량**: 안정적인 메모리 관리
-- **CPU 사용률**: 60 TPS 안정적 유지
-- **네트워크 처리량**: 실시간 패킷 처리
+서버는 현재 안정적인 상태로 다음 성능을 보장합니다:
+- **게임 루프**: 60 TPS 일정한 틱 레이트 유지
+- **메모리 관리**: 플레이어 재연결 시 메모리 누수 없음  
+- **네트워크 처리**: 비동기 I/O로 안정적인 패킷 처리
+- **공간 최적화**: QuadTree AOI로 효율적인 공간 관리
+- **멀티플레이어**: 다중 세션 동시 접속 지원
 
 ## 📊 **구현 현황**
 

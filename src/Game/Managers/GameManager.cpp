@@ -360,7 +360,18 @@ namespace CppMMO
                 auto existingPlayer = m_world->GetPlayer(data.playerId);
                 if (existingPlayer.has_value())
                 {
-                    LOG_WARN("HandleEnterZone: Player {} already in world", data.playerId);
+                    auto& player = existingPlayer.value().get();
+                    if (player.IsActive())
+                    {
+                        LOG_WARN("HandleEnterZone: Player {} already active", data.playerId);
+                        return;
+                    }
+                    player.SetActive(true);
+                    player.SetSessionId(data.sessionId);
+                    m_quadTree->Insert(data.playerId, player.GetPosition());
+                    SendEnterZoneResponse(data.playerId, session);
+                    BroadcastPlayerJoined(data.playerId);
+                    LOG_INFO("HandleEnterZone: Player {} reconnected", data.playerId);
                     return;
                 }
                 
