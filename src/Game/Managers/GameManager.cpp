@@ -122,18 +122,22 @@ namespace CppMMO
              */
             Vec3 GameManager::GetSpawnPosition() const
             {
+                // Fixed spawn position (map center)
+                float centerX = m_mapWidth * 0.5f;   // 100.0f (200*0.5)
+                float centerY = m_mapHeight * 0.5f;  // 100.0f (200*0.5)
+                
+                // All players spawn at the same location
+                return Vec3(centerX, centerY, 0.0f);
+                
+                // Original random spawn code (commented out)
+                /*
                 static std::random_device rd;
                 static std::mt19937 gen(rd());
-                
-                // 맵 중앙 근처에서 스폰 (20% 범위)
-                float centerX = m_mapWidth * 0.5f;
-                float centerY = m_mapHeight * 0.5f;
                 float spawnRange = std::min(m_mapWidth, m_mapHeight) * 0.1f;
-                
                 std::uniform_real_distribution<float> disX(centerX - spawnRange, centerX + spawnRange);
                 std::uniform_real_distribution<float> disY(centerY - spawnRange, centerY + spawnRange);
-                
                 return Vec3(disX(gen), disY(gen), 0.0f);
+                */
             }
 
             /**
