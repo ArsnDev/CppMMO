@@ -4,6 +4,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/async.h> // Required for async logging
 
 #include <string>
 #include <vector>
@@ -33,6 +34,10 @@ namespace CppMMO{
                     }
                     try
                     {
+                        // 1. Create a thread pool for async logging
+                        spdlog::init_thread_pool(8192, 1);
+
+                        // 2. Create sinks
                         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
                         console_sink->set_level(spdlog::level::info);
                         console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
@@ -41,19 +46,28 @@ namespace CppMMO{
                         daily_file_sink->set_level(spdlog::level::debug);
                         daily_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%s:%#] %v");
                     
+                        // 3. Create an async logger using the thread pool
                         std::vector<spdlog::sink_ptr> sinks {console_sink, daily_file_sink};
-                        s_logger = std::make_shared<spdlog::logger>("CppMMO_Logger", sinks.begin(), sinks.end());
+                        s_logger = std::make_shared<spdlog::async_logger>("CppMMO_Logger", sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
                         s_logger->set_level(spdlog::level::debug);
+                        
+                        // 4. Register the logger and set it as the default
+                        spdlog::register_logger(s_logger);
                         spdlog::set_default_logger(s_logger);
-                        spdlog::flush_on(spdlog::level::info);
 
-                        spdlog::info("Logger initialized successfully.");
+                        spdlog::info("Asynchronous logger initialized successfully.");
                     }
                     catch (const spdlog::spdlog_ex& ex)
                     {
                         std::cerr << "spdlog initialization failed: " << ex.what() << std::endl;
                     }
                 }
+
+                static void Shutdown()
+                {
+                    spdlog::shutdown();
+                }
+
                 static std::shared_ptr<spdlog::logger>& Get()
                 {
                     return s_logger;

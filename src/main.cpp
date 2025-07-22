@@ -134,8 +134,10 @@ int main(int argc, char* argv[])
     catch (const std::exception& e)
     {
         LOG_CRITICAL("Exception occurred in server main loop: {}", e.what());
+        CppMMO::Utils::Logger::Shutdown();
         return 1;
     }
 
+    CppMMO::Utils::Logger::Shutdown();
     return 0;
 }
