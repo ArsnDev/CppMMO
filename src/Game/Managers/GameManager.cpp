@@ -402,6 +402,7 @@ namespace CppMMO
                 auto& player = playerOpt.value().get();
 
                 player.SetActive(false);
+                player.SetLastInputSequence(0); // 재접속 시 입력 시퀀스 번호 초기화를 위해 추가
                 m_quadTree->Remove(data.playerId);
                 BroadcastPlayerLeft(data.playerId);
                 

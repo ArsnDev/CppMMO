@@ -40,10 +40,26 @@ namespace CppMMO
         void Session::Disconnect()
         {
             boost::system::error_code ec;
+            
+            // 1. Cancel all async operations first
+            m_timer.cancel();
+            
+            // 2. Shutdown and close socket
             m_socket.shutdown(ip::tcp::socket::shutdown_both, ec);
             m_socket.close(ec);
-            m_timer.cancel();
-            LOG_INFO("Session {} closed.", m_sessionId);
+            
+            // 3. Clear all buffers to prevent resource leaks
+            m_readHeader.fill(std::byte{0}); // Clear header buffer
+            m_readBody.clear();
+            m_readBody.shrink_to_fit(); // Release memory
+            
+            // 4. Clear write queue to prevent pending writes
+            std::vector<std::byte> dummy;
+            while (m_writeQueue.try_dequeue(dummy)) {
+                // Drain the queue
+            }
+            
+            LOG_INFO("Session {} closed and all buffers cleared.", m_sessionId);
 
             if (m_onDisconnectedCallback)
             {
@@ -218,6 +234,10 @@ namespace CppMMO
             if (ec == asio::error::eof || ec == asio::error::operation_aborted)
             {
                 LOG_INFO("Session {}: {} completed gracefully or aborted. Error: {}", m_sessionId, operation, ec.message());
+            }
+            else if (ec == asio::error::bad_descriptor)
+            {
+                LOG_WARN("Session {}: {} operation on closed socket (bad descriptor). This is expected during disconnect.", m_sessionId, operation);
             }
             else
             {

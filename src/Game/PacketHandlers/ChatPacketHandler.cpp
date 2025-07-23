@@ -30,7 +30,7 @@ namespace CppMMO
                 }
 
                 const std::string chat_message = c_chat_packet->message()->str();
-                const int64_t player_id = session->GetSessionId();
+                const int64_t player_id = session->GetPlayerId();
                 LOG_INFO("[ChatPacketHandler] Processing chat message: '{}' from player: {} (session: {})", chat_message, player_id, session->GetRemoteEndpoint().address().to_string());
 
                 std::string message_with_player = std::to_string(player_id) + "|" + chat_message;
