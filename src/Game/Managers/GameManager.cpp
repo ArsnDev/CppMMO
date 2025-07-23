@@ -177,6 +177,7 @@ namespace CppMMO
                             ProcessPendingCommands();
                             UpdateWorld(deltaSeconds);
                             SendWorldSnapshots();
+                            FlushAllBatches();
                             
                             lastTickTime = currentTime;
                         }
@@ -253,12 +254,18 @@ namespace CppMMO
              */
             void GameManager::SendWorldSnapshots()
             {
+                // 틱 번호와 서버 시간을 한 번만 계산
+                m_tickNumber++;
+                uint64_t currentServerTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count();
+
                 for (const auto& [playerId, player] : m_world->GetAllPlayers())
                 {
                     if (player.IsActive())
                     {
                         auto visiblePlayers = GetPlayersInAOI(player.GetPosition());
-                        SendSnapshotToPlayers({playerId}, visiblePlayers);
+                        // 월드 스냅샷을 배치에 추가 (즉시 전송하지 않음)
+                        AddSnapshotToPlayerBatch(playerId, visiblePlayers, currentServerTime);
                     }
                 }
             }
@@ -409,71 +416,6 @@ namespace CppMMO
                 LOG_INFO("HandlePlayerDisconnect: Player {} disconnected.", data.playerId);
             }
 
-            /**
-             * @brief Sends a world snapshot packet to specified players, including the states of visible players.
-             *
-             * Constructs a FlatBuffers-serialized snapshot containing the current tick, server time, and the state of each visible player, then sends it to each player in the provided list if their session is connected.
-             *
-             * @param playerIds List of player IDs to receive the snapshot.
-             * @param visiblePlayers List of player IDs whose states are included in the snapshot.
-             */
-            void GameManager::SendSnapshotToPlayers(const std::vector<uint64_t>& playerIds, const std::vector<uint64_t>& visiblePlayers)
-            {
-                flatbuffers::FlatBufferBuilder builder;
-
-                std::vector<flatbuffers::Offset<Protocol::PlayerState>> playerStates;
-                for (uint64_t playerId : visiblePlayers)
-                {
-                    auto playerOpt = m_world->GetPlayer(playerId);
-                    if (playerOpt.has_value())
-                    {
-                        const auto& player = playerOpt.value().get();
-                        auto pos = Protocol::CreateVec3(builder, player.GetPosition().x, player.GetPosition().y, player.GetPosition().z);
-                        
-                        auto vel = Protocol::CreateVec3(builder, player.GetVelocity().x, player.GetVelocity().y, player.GetVelocity().z);
-                        
-                        auto playerState = Protocol::CreatePlayerState(builder, playerId, pos, vel, player.IsActive());
-                        playerStates.push_back(playerState);
-                    }
-                }
-
-                auto playerStatesVector = builder.CreateVector(playerStates);
-                auto eventsVector = builder.CreateVector<flatbuffers::Offset<Protocol::GameEvent>>({});
-
-                m_tickNumber++;
-                uint64_t serverTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count();
-
-                auto snapshot = Protocol::CreateS_WorldSnapshot(builder,
-                    m_tickNumber,
-                    serverTime,
-                    playerStatesVector,
-                    eventsVector);
-                
-                auto unifiedPacket = Protocol::CreateUnifiedPacket(builder, 
-                    Protocol::PacketId_S_WorldSnapshot, 
-                    Protocol::Packet_S_WorldSnapshot, 
-                    snapshot.Union());
-
-                builder.Finish(unifiedPacket);
-                
-                for (uint64_t playerId : playerIds)
-                {
-                    auto playerOpt = m_world->GetPlayer(playerId);
-                    if (playerOpt.has_value())
-                    {
-                        const auto& player = playerOpt.value().get();
-                        auto session = m_sessionManager->GetSession(player.GetSessionId());
-                        if (session && session->IsConnected())
-                        {
-                            session->Send(std::span<const std::byte>(
-                                reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
-                                builder.GetSize()));
-                            LOG_DEBUG("Sent S_WorldSnapshot to Player {} (Session {})", playerId, player.GetSessionId());
-                        }
-                    }
-                }
-            }
 
             /**
              * @brief Sends a zone entry response to a player upon entering the game world.
@@ -638,6 +580,129 @@ namespace CppMMO
                 }
 
                 LOG_INFO("BroadcastPlayerLeft: Player {} left, notified others", playerId);
+            }
+
+            /**
+             * @brief Adds a packet to the specified player's batch for tick-based transmission.
+             *
+             * Stores packet data in the player's batch buffer to be sent together at the end of the tick,
+             * reducing the number of system calls by combining multiple packets into a single transmission.
+             *
+             * @param playerId The ID of the player to receive the packet.
+             * @param packetData The packet data to add to the batch.
+             */
+            void GameManager::AddToPlayerBatch(uint64_t playerId, std::span<const std::byte> packetData)
+            {
+                // Copy packet data to owned buffer
+                std::vector<std::byte> packetCopy(packetData.begin(), packetData.end());
+                m_playerBatches[playerId].push_back(std::move(packetCopy));
+                
+                LOG_DEBUG("Added packet ({} bytes) to Player {}'s batch", packetData.size(), playerId);
+            }
+
+            /**
+             * @brief Creates and adds a world snapshot packet to the specified player's batch.
+             *
+             * Generates a FlatBuffers-serialized world snapshot containing visible players' states
+             * and adds it to the player's batch for efficient transmission.
+             *
+             * @param playerId The ID of the player to receive the snapshot.
+             * @param visiblePlayers List of player IDs whose states are included in the snapshot.
+             */
+            void GameManager::AddSnapshotToPlayerBatch(uint64_t playerId, const std::vector<uint64_t>& visiblePlayers, uint64_t serverTime)
+            {
+                flatbuffers::FlatBufferBuilder builder;
+
+                std::vector<flatbuffers::Offset<Protocol::PlayerState>> playerStates;
+                for (uint64_t visiblePlayerId : visiblePlayers)
+                {
+                    auto playerOpt = m_world->GetPlayer(visiblePlayerId);
+                    if (playerOpt.has_value())
+                    {
+                        const auto& player = playerOpt.value().get();
+                        auto pos = Protocol::CreateVec3(builder, player.GetPosition().x, player.GetPosition().y, player.GetPosition().z);
+                        auto vel = Protocol::CreateVec3(builder, player.GetVelocity().x, player.GetVelocity().y, player.GetVelocity().z);
+                        auto playerState = Protocol::CreatePlayerState(builder, visiblePlayerId, pos, vel, player.IsActive());
+                        playerStates.push_back(playerState);
+                    }
+                }
+
+                auto playerStatesVector = builder.CreateVector(playerStates);
+                auto eventsVector = builder.CreateVector<flatbuffers::Offset<Protocol::GameEvent>>({});
+
+                // 틱 번호와 서버 시간은 매개변수로 받은 값 사용 (한 틱에서 모든 플레이어가 동일한 값)
+                auto snapshot = Protocol::CreateS_WorldSnapshot(builder,
+                    m_tickNumber,
+                    serverTime,
+                    playerStatesVector,
+                    eventsVector);
+                
+                auto unifiedPacket = Protocol::CreateUnifiedPacket(builder, 
+                    Protocol::PacketId_S_WorldSnapshot, 
+                    Protocol::Packet_S_WorldSnapshot, 
+                    snapshot.Union());
+
+                builder.Finish(unifiedPacket);
+
+                // Add to player's batch
+                std::span<const std::byte> packetData(
+                    reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
+                    builder.GetSize());
+                AddToPlayerBatch(playerId, packetData);
+
+                LOG_DEBUG("Added S_WorldSnapshot to Player {}'s batch (tick {}, {} visible players)", 
+                         playerId, m_tickNumber, visiblePlayers.size());
+            }
+
+            /**
+             * @brief Flushes all accumulated packet batches to their respective players.
+             *
+             * Sends all batched packets for each player in a single transmission, then clears
+             * the batches for the next tick. This significantly reduces system call overhead
+             * by combining multiple packets into single network operations.
+             */
+            void GameManager::FlushAllBatches()
+            {
+                size_t totalBatches = 0;
+                size_t totalPackets = 0;
+
+                for (auto& [playerId, packets] : m_playerBatches)
+                {
+                    if (packets.empty()) continue;
+
+                    auto playerOpt = m_world->GetPlayer(playerId);
+                    if (!playerOpt.has_value()) {
+                        packets.clear(); // 플레이어가 없으면 배치 정리
+                        continue;
+                    }
+
+                    const auto& player = playerOpt.value().get();
+                    auto session = m_sessionManager->GetSession(player.GetSessionId());
+                    if (!session || !session->IsConnected()) {
+                        packets.clear(); // 세션이 없으면 배치 정리
+                        continue;
+                    }
+
+                    // Convert owned buffers to spans for SendBatch
+                    std::vector<std::span<const std::byte>> packetSpans;
+                    packetSpans.reserve(packets.size());
+                    for (const auto& packet : packets) {
+                        packetSpans.emplace_back(packet.data(), packet.size());
+                    }
+
+                    // Send batch to player
+                    session->SendBatch(packetSpans);
+                    
+                    totalBatches++;
+                    totalPackets += packets.size();
+                    
+                    // Clear batch for next tick
+                    packets.clear();
+                }
+
+                if (totalBatches > 0) {
+                    LOG_DEBUG("Flushed {} batches containing {} total packets", totalBatches, totalPackets);
+                }
             }
         }
     }
