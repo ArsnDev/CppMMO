@@ -60,7 +60,7 @@ namespace CppMMO
 
                 // Tick-based batching methods
                 void AddToPlayerBatch(uint64_t playerId, std::span<const std::byte> packetData);
-                void AddSnapshotToPlayerBatch(uint64_t playerId, const std::vector<uint64_t>& visiblePlayers);
+                void AddSnapshotToPlayerBatch(uint64_t playerId, const std::vector<uint64_t>& visiblePlayers, uint64_t serverTime);
                 void FlushAllBatches();
 
                 void HandlePlayerInput(const PlayerInputCommandData& data, std::shared_ptr<Network::ISession> session);
@@ -68,7 +68,6 @@ namespace CppMMO
                 void HandlePlayerDisconnect(const PlayerDisconnectCommandData& data, std::shared_ptr<Network::ISession> session);
            
                 std::vector<uint64_t> GetPlayersInAOI(const Vec3& position);
-                void SendSnapshotToPlayers(const std::vector<uint64_t>& playerIds, const std::vector<uint64_t>& visiblePlayers);
                 void SendEnterZoneResponse(uint64_t playerId, std::shared_ptr<Network::ISession> session);
                 void BroadcastPlayerJoined(uint64_t playerId);
                 void BroadcastPlayerLeft(uint64_t playerId);
