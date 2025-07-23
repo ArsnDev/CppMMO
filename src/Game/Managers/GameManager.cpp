@@ -457,6 +457,13 @@ namespace CppMMO
 
                 builder.Finish(unifiedPacket);
                 
+                // Create packet data span
+                std::span<const std::byte> packetData(
+                    reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
+                    builder.GetSize());
+                
+                // Group sessions for batching (each session gets same packet)
+                std::vector<std::shared_ptr<Network::ISession>> activeSessions;
                 for (uint64_t playerId : playerIds)
                 {
                     auto playerOpt = m_world->GetPlayer(playerId);
@@ -466,13 +473,20 @@ namespace CppMMO
                         auto session = m_sessionManager->GetSession(player.GetSessionId());
                         if (session && session->IsConnected())
                         {
-                            session->Send(std::span<const std::byte>(
-                                reinterpret_cast<const std::byte*>(builder.GetBufferPointer()), 
-                                builder.GetSize()));
-                            LOG_DEBUG("Sent S_WorldSnapshot to Player {} (Session {})", playerId, player.GetSessionId());
+                            activeSessions.push_back(session);
                         }
                     }
                 }
+                
+                // Send to all active sessions using batching
+                for (auto& session : activeSessions)
+                {
+                    std::vector<std::span<const std::byte>> packets;
+                    packets.push_back(packetData);
+                    session->SendBatch(packets);
+                }
+                
+                LOG_DEBUG("Sent S_WorldSnapshot batch to {} players", activeSessions.size());
             }
 
             /**
