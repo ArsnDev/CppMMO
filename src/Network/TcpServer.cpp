@@ -18,7 +18,14 @@ namespace CppMMO
                             m_sessionManager(sessionManager),
                             m_signals(io_context, SIGINT, SIGTERM)
         {
-            LOG_INFO("TcpServer Created. Listening on port {}", port);
+            // Enable address reuse to prevent "Address already in use" errors
+            m_acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
+            
+            // Disable linger to prevent TIME_WAIT issues
+            boost::asio::socket_base::linger linger_option(false, 0);
+            m_acceptor.set_option(linger_option);
+            
+            LOG_INFO("TcpServer Created. Listening on port {} with SO_REUSEADDR and SO_LINGER disabled", port);
 
             m_signals.async_wait([this](const boost::system::error_code& ec, int signal_number)
             {
@@ -80,6 +87,7 @@ namespace CppMMO
             {
                 m_ioContext.stop();
                 LOG_INFO("TcpServer stopping io_context.");
+                m_ioContext.reset(); // Prepare io_context for reuse
             }
             for (std::thread& thread : m_workerThreads)
             {
@@ -112,6 +120,12 @@ namespace CppMMO
                 {
                     ip::tcp::socket socket(m_ioContext);
                     co_await m_acceptor.async_accept(socket, asio::use_awaitable);
+                    
+                    // Configure socket options for better connection handling
+                    boost::asio::socket_base::linger linger_option(false, 0);
+                    socket.set_option(linger_option);
+                    socket.set_option(ip::tcp::no_delay(true)); // Disable Nagle algorithm for low latency
+                    
                     LOG_INFO("New connection accepted from {}", socket.remote_endpoint().address().to_string());
                     auto session = std::make_shared<Session>(std::move(socket), m_packetManager);
                     session->SetOnDisconnectedCallback([self = shared_from_this()](std::shared_ptr<ISession> session)
