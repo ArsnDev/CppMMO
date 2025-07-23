@@ -49,11 +49,19 @@ namespace CppMMO
                 float m_mapWidth = 200.0f;
                 float m_mapHeight = 200.0f;
 
+                // Tick-based batching system
+                std::unordered_map<uint64_t, std::vector<std::vector<std::byte>>> m_playerBatches;
+
                 void GameLoop();
                 void ProcessPendingCommands();
                 void UpdateWorld(float deltaTime);
                 void SendWorldSnapshots();
                 void ProcessGameCommand(GameCommand command);
+
+                // Tick-based batching methods
+                void AddToPlayerBatch(uint64_t playerId, std::span<const std::byte> packetData);
+                void AddSnapshotToPlayerBatch(uint64_t playerId, const std::vector<uint64_t>& visiblePlayers);
+                void FlushAllBatches();
 
                 void HandlePlayerInput(const PlayerInputCommandData& data, std::shared_ptr<Network::ISession> session);
                 void HandleEnterZone(const EnterZoneCommandData& data, std::shared_ptr<Network::ISession> session);

@@ -103,10 +103,23 @@ namespace CppMMO
         {
             if (packets.empty()) return;
 
-            // Calculate total size needed
+            // Calculate total size needed with overflow protection
+            constexpr size_t MAX_BATCH_SIZE = 64 * 1024 * 1024; // 64MB limit
             size_t totalSize = 0;
             for (const auto& packet : packets) {
+                // Check for potential overflow
+                if (totalSize > SIZE_MAX - sizeof(uint32_t) - packet.size()) {
+                    LOG_ERROR("Session {}: Batch size overflow, dropping batch", m_sessionId);
+                    return;
+                }
                 totalSize += sizeof(uint32_t) + packet.size(); // header + body
+                
+                // Check practical size limit
+                if (totalSize > MAX_BATCH_SIZE) {
+                    LOG_ERROR("Session {}: Batch size ({} bytes) exceeds limit ({} bytes), dropping batch", 
+                             m_sessionId, totalSize, MAX_BATCH_SIZE);
+                    return;
+                }
             }
 
             // Create single combined buffer
