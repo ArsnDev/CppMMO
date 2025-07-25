@@ -36,7 +36,9 @@ namespace CppMMO
         {
             if (m_jobQueue)
             {
-                m_jobQueue->PushJob({ session, packet });
+                // Create a copy to move (avoid const reference issue)
+                std::vector<std::byte> packetCopy = packet;
+                m_jobQueue->PushJob(Utils::Job(session, std::move(packetCopy)));
             }
             else
             {

@@ -48,6 +48,12 @@ namespace CppMMO
             return nullptr;
         }
 
+        size_t SessionManager::GetActiveSessionCount() const
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            return m_activeSessions.size();
+        }
+
         /**
          * @brief Retrieves all active network sessions.
          *

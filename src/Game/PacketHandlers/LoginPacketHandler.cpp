@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "LoginPacketHandler.h"
 #include <boost/asio/post.hpp>
+#include "Utils/MemoryPool.h"
 
 namespace CppMMO
 {
@@ -70,7 +71,9 @@ namespace CppMMO
                             {
                                 LOG_INFO("[LoginPacketHandler] User '{}' authenticated successfully. PlayerId: {}", authResponse.username, authResponse.playerId);
                                 session->SetPlayerId(authResponse.playerId);
-                                flatbuffers::FlatBufferBuilder builder;
+                                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
                                 auto player_name_offset = builder.CreateString(authResponse.username);
                                 
                                 auto player_info_offset = Protocol::CreatePlayerInfo(builder,
@@ -100,7 +103,9 @@ namespace CppMMO
 
             void LoginPacketHandler::SendLoginFailure(std::shared_ptr<Network::ISession> session, int errorCode, const std::string& errorMessage, int64_t commandId) const
             {
-                flatbuffers::FlatBufferBuilder builder;
+                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
                 auto error_message_offset = builder.CreateString(errorMessage);
                 auto s_login_failure_offset = Protocol::CreateS_LoginFailure(builder, errorCode, error_message_offset, commandId);
                 

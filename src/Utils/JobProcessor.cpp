@@ -54,7 +54,9 @@ namespace CppMMO
             }
             for (size_t i = 0; i < m_workerThreads.size(); ++i)
             {
-                m_jobQueue->PushJob({nullptr, {}, true});
+                Job shutdownJob;
+                shutdownJob.isShutdownSignal = true;
+                m_jobQueue->PushJob(std::move(shutdownJob));
             }
             for (std::thread& thread : m_workerThreads)
             {

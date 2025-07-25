@@ -500,6 +500,24 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # -------------------------------------------------------------
-# 11. TODO.Txt
+# 11. Performance Test Results & Temporary Files
+# -------------------------------------------------------------
+# Test result files (CSV data from performance tests)
+Test/*.csv
+Test/*_test_*.csv
+Test/load_test_*.csv
+Test/performance_test_*.csv
+Test/direct_server_test_*.csv
+
+# Test credentials and accounts (security)
+Test/test_credentials.json
+Test/load_test_accounts.json
+
+# Temporary optimization reports
+*_OPTIMIZATION_RESULTS.md
+Performance_Optimization_Report_*.md
+
+# -------------------------------------------------------------
+# 12. TODO.Txt
 # -------------------------------------------------------------
 TODO.txt

@@ -37,6 +37,20 @@ namespace CppMMO
             {
                 // TODO: Implement player update logic
             }
+
+            bool Player::IsInputAllowed() const
+            {
+                static constexpr int INPUT_RATE_LIMIT_MS = 33;  // 30fps = 33ms minimum interval
+                
+                auto now = std::chrono::steady_clock::now();
+                auto timeSinceLastInput = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastInputTime);
+                return timeSinceLastInput.count() >= INPUT_RATE_LIMIT_MS;
+            }
+
+            void Player::UpdateLastInputTime()
+            {
+                m_lastInputTime = std::chrono::steady_clock::now();
+            }
         }
     }
 }

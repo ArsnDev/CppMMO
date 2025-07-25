@@ -32,14 +32,21 @@ class C_Login(object):
         return None
 
     # C_Login
-    def CommandId(self):
+    def PlayerId(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # C_Login
+    def CommandId(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
         return 0
 
 def C_LoginStart(builder):
-    builder.StartObject(2)
+    builder.StartObject(3)
 
 def Start(builder):
     C_LoginStart(builder)
@@ -50,8 +57,14 @@ def C_LoginAddSessionTicket(builder, sessionTicket):
 def AddSessionTicket(builder, sessionTicket):
     C_LoginAddSessionTicket(builder, sessionTicket)
 
+def C_LoginAddPlayerId(builder, playerId):
+    builder.PrependUint64Slot(1, playerId, 0)
+
+def AddPlayerId(builder, playerId):
+    C_LoginAddPlayerId(builder, playerId)
+
 def C_LoginAddCommandId(builder, commandId):
-    builder.PrependInt64Slot(1, commandId, 0)
+    builder.PrependInt64Slot(2, commandId, 0)
 
 def AddCommandId(builder, commandId):
     C_LoginAddCommandId(builder, commandId)

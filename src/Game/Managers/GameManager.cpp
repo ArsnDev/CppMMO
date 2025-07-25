@@ -2,6 +2,7 @@
 #include <fstream>
 #include <random>
 #include <nlohmann/json.hpp>
+#include "Utils/MemoryPool.h"
 
 namespace CppMMO
 {
@@ -106,8 +107,12 @@ namespace CppMMO
                     m_mapWidth = config["map"]["width"].get<float>();
                     m_mapHeight = config["map"]["height"].get<float>();
                     
-                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}, TickRate: {}, Map: {}x{}", 
-                            m_aoiRange, m_chatRange, m_moveSpeed, m_tickRate, m_mapWidth, m_mapHeight);
+                    // Load performance settings with defaults
+                    m_commandBatchSize = config.value("performance", nlohmann::json{})
+                                              .value("command_batch_size", 100);
+                    
+                    LOG_INFO("Game config loaded - AOI: {}, Chat: {}, Speed: {}, TickRate: {}, Map: {}x{}, BatchSize: {}", 
+                            m_aoiRange, m_chatRange, m_moveSpeed, m_tickRate, m_mapWidth, m_mapHeight, m_commandBatchSize);
                 }
                 catch (const std::exception& e)
                 {
@@ -198,7 +203,11 @@ namespace CppMMO
              */
             void GameManager::ProcessPendingCommands()
             {
-                while (true)
+                std::vector<GameCommand> commandBatch;
+                commandBatch.reserve(m_commandBatchSize);
+                
+                // Collect commands in batches for efficient processing
+                while (commandBatch.size() < static_cast<size_t>(m_commandBatchSize))
                 {
                     auto optCommand = m_gameLogicQueue->TryPopGameCommand();
                     if (!optCommand.has_value())
@@ -211,14 +220,25 @@ namespace CppMMO
                         break;
                     }
                     
+                    commandBatch.push_back(std::move(optCommand.value()));
+                }
+                
+                // Process all commands in the batch
+                for (auto& command : commandBatch)
+                {
                     try
                     {
-                        ProcessGameCommand(optCommand.value());
+                        ProcessGameCommand(std::move(command));
                     }
                     catch (const std::exception& e)
                     {
                         LOG_ERROR("Exception processing game command: {}", e.what());
                     }
+                }
+                
+                if (!commandBatch.empty())
+                {
+                    LOG_DEBUG("Processed batch of {} commands", commandBatch.size());
                 }
             }
 
@@ -342,12 +362,21 @@ namespace CppMMO
                     return;
                 }
                 auto& player = playerOpt.value().get();
+                // Apply rate limiting to prevent input flooding
+                if (!player.IsInputAllowed())
+                {
+                    LOG_DEBUG("Rate limiting: Player {} input too frequent, ignoring", data.playerId);
+                    return;
+                }
+                
                 // TODO : Check Sequence Num
                 if (data.sequenceNumber <= player.GetLastInputSequence())
                 {
                     LOG_DEBUG("Ignoring old/duplicate input: seq {} <= last {}", data.sequenceNumber, player.GetLastInputSequence());
                     return;
                 }
+                
+                player.UpdateLastInputTime();
                 player.SetLastInputSequence(data.sequenceNumber);
                 player.SetCurrentInputFlags(data.inputFlags);
                 const Vec3& direction = InputFlagsToDirection(data.inputFlags);
@@ -427,7 +456,9 @@ namespace CppMMO
              */
             void GameManager::SendEnterZoneResponse(uint64_t playerId, std::shared_ptr<Network::ISession> session)
             {
-                flatbuffers::FlatBufferBuilder builder;
+                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
 
                 auto playerOpt = m_world->GetPlayer(playerId);
                 if (!playerOpt.has_value())
@@ -438,7 +469,9 @@ namespace CppMMO
                 const auto& player = playerOpt.value().get();
 
                 auto pos = Protocol::CreateVec3(builder, player.GetPosition().x, player.GetPosition().y, player.GetPosition().z);
-                auto playerName = builder.CreateString("Player_" + std::to_string(playerId));
+                // Use cached string to avoid repeated allocation
+                std::string playerNameStr = Utils::MemoryPoolManager::Instance().GetStringCache().GetPlayerName(playerId);
+                auto playerName = builder.CreateString(playerNameStr);
                 auto playerInfo = Protocol::CreatePlayerInfo(builder, playerId, playerName, pos, 100, 100);
                 
                 auto nearPlayers = GetPlayersInAOI(player.GetPosition());
@@ -521,7 +554,9 @@ namespace CppMMO
                 }
 
                 const auto& player = playerOpt.value().get();
-                flatbuffers::FlatBufferBuilder builder;
+                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
 
                 auto pos = Protocol::CreateVec3(builder, player.GetPosition().x, player.GetPosition().y, player.GetPosition().z);
                 auto playerName = builder.CreateString("Player_" + std::to_string(playerId));
@@ -558,7 +593,9 @@ namespace CppMMO
              */
             void GameManager::BroadcastPlayerLeft(uint64_t playerId)
             {
-                flatbuffers::FlatBufferBuilder builder;
+                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
 
                 auto playerLeft = Protocol::CreateS_PlayerLeft(builder, playerId);
                 auto unifiedPacket = Protocol::CreateUnifiedPacket(builder, 
@@ -611,9 +648,14 @@ namespace CppMMO
              */
             void GameManager::AddSnapshotToPlayerBatch(uint64_t playerId, const std::vector<uint64_t>& visiblePlayers, uint64_t serverTime)
             {
-                flatbuffers::FlatBufferBuilder builder;
+                // Use pooled builder to avoid dynamic allocation
+                auto pooledBuilder = Utils::MemoryPoolManager::Instance().GetPooledBuilder();
+                auto& builder = *pooledBuilder;
 
-                std::vector<flatbuffers::Offset<Protocol::PlayerState>> playerStates;
+                // Use pooled vector to avoid dynamic allocation
+                auto pooledVector = Utils::MemoryPoolManager::Instance().GetPooledVector();
+                auto& playerStates = *pooledVector;
+                
                 for (uint64_t visiblePlayerId : visiblePlayers)
                 {
                     auto playerOpt = m_world->GetPlayer(visiblePlayerId);

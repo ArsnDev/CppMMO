@@ -53,6 +53,18 @@ namespace CppMMO
                 
                 uint32_t GetLastInputSequence() const { return m_lastInputSequence; }
                 void SetLastInputSequence(uint32_t sequence) { m_lastInputSequence = sequence; }
+                
+                /**
+                 * @brief Checks if input is allowed based on rate limiting (30fps maximum).
+                 *
+                 * @return true if sufficient time has passed since last input, false otherwise.
+                 */
+                bool IsInputAllowed() const;
+                
+                /**
+                 * @brief Updates the timestamp of the last input for rate limiting purposes.
+                 */
+                void UpdateLastInputTime();
 
                 // === Connection State ===
                 bool IsActive() const { return m_isActive; }
@@ -92,6 +104,9 @@ namespace CppMMO
                 uint8_t m_currentInputFlags = 0;
                 Vec3 m_mousePosition{};
                 uint32_t m_lastInputSequence = 0;
+                std::chrono::steady_clock::time_point m_lastInputTime{};
+                
+                // === Rate Limiting ===
                 
                 // === Connection State ===
                 bool m_isActive = true;

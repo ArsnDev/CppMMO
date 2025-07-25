@@ -4,7 +4,9 @@ namespace CppMMO
 {
     namespace Utils
     {
-        JobQueue::JobQueue() : m_jobQueue(256)
+        static constexpr size_t DEFAULT_QUEUE_CAPACITY = 1024;
+        
+        JobQueue::JobQueue() : m_jobQueue(DEFAULT_QUEUE_CAPACITY)
         {
         }
 
