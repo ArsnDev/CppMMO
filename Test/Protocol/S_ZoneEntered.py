@@ -36,7 +36,7 @@ class S_ZoneEntered(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from CppMMO.Protocol.PlayerInfo import PlayerInfo
+            from .PlayerInfo import PlayerInfo
             obj = PlayerInfo()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -49,7 +49,7 @@ class S_ZoneEntered(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from CppMMO.Protocol.PlayerInfo import PlayerInfo
+            from .PlayerInfo import PlayerInfo
             obj = PlayerInfo()
             obj.Init(self._tab.Bytes, x)
             return obj

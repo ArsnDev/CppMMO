@@ -45,7 +45,7 @@ class S_WorldSnapshot(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from CppMMO.Protocol.PlayerState import PlayerState
+            from .PlayerState import PlayerState
             obj = PlayerState()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -70,7 +70,7 @@ class S_WorldSnapshot(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from CppMMO.Protocol.GameEvent import GameEvent
+            from .GameEvent import GameEvent
             obj = GameEvent()
             obj.Init(self._tab.Bytes, x)
             return obj
