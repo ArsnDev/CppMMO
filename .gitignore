@@ -517,6 +517,14 @@ Test/load_test_accounts.json
 *_OPTIMIZATION_RESULTS.md
 Performance_Optimization_Report_*.md
 
+# Additional test result files and analysis reports
+Test/csv_analysis_report_*.txt
+Test/nul
+
+# Python cache and analysis files
+Test/*.pyc
+Test/__pycache__/
+
 # -------------------------------------------------------------
 # 12. TODO.Txt
 # -------------------------------------------------------------

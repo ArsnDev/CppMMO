@@ -1098,14 +1098,34 @@ if __name__ == "__main__":
                         choices=['basic', 'stress', 'extreme', 'massive', 'optimized'],
                         default='basic',
                         help='성능 테스트 시나리오 선택')
+    parser.add_argument('--clients', '-c',
+                        type=int,
+                        help='클라이언트 수 (시나리오 기본값 무시)')
+    parser.add_argument('--duration', '-d',
+                        type=int,
+                        help='테스트 지속 시간(초)')
     
     args = parser.parse_args()
+    
+    # 명령행 인수로 시나리오 설정 오버라이드
+    if args.clients or args.duration:
+        scenario_config = TestConfig.SCENARIOS[args.scenario].copy()
+        if args.clients:
+            scenario_config['clients'] = args.clients
+        if args.duration:
+            scenario_config['duration'] = args.duration
+        
+        # 동적 시나리오 설정을 위해 SCENARIOS 업데이트
+        TestConfig.SCENARIOS[f'{args.scenario}_custom'] = scenario_config
+        scenario_name = f'{args.scenario}_custom'
+    else:
+        scenario_name = args.scenario
     
     try:
         print("성능 측정을 시작합니다. 서버가 실행 중인지 확인하세요...")
         time.sleep(2)
         
-        run_comprehensive_performance_test(args.scenario)
+        run_comprehensive_performance_test(scenario_name)
         
     except KeyboardInterrupt:
         print("\n성능 테스트가 사용자에 의해 중단되었습니다.")
