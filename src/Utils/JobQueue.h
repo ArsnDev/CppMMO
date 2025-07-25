@@ -12,6 +12,29 @@ namespace CppMMO
             std::shared_ptr<Network::ISession> session;
             std::vector<std::byte> packetBuffer;
             bool isShutdownSignal = false;
+            
+            // Move constructor to avoid vector copying
+            Job() = default;
+            Job(std::shared_ptr<Network::ISession> sess, std::vector<std::byte>&& buffer)
+                : session(std::move(sess)), packetBuffer(std::move(buffer)) {}
+            Job(Job&& other) noexcept
+                : session(std::move(other.session)), 
+                  packetBuffer(std::move(other.packetBuffer)),
+                  isShutdownSignal(other.isShutdownSignal) {}
+            Job& operator=(Job&& other) noexcept
+            {
+                if (this != &other)
+                {
+                    session = std::move(other.session);
+                    packetBuffer = std::move(other.packetBuffer);
+                    isShutdownSignal = other.isShutdownSignal;
+                }
+                return *this;
+            }
+            
+            // Delete copy operations to prevent accidental copying
+            Job(const Job&) = delete;
+            Job& operator=(const Job&) = delete;
         };
 
         class JobQueue

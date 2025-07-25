@@ -6,25 +6,25 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
-class S_LoginSuccess(object):
+class S_PlayerJoined(object):
     __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = S_LoginSuccess()
+        x = S_PlayerJoined()
         x.Init(buf, n + offset)
         return x
 
     @classmethod
-    def GetRootAsS_LoginSuccess(cls, buf, offset=0):
+    def GetRootAsS_PlayerJoined(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-    # S_LoginSuccess
+    # S_PlayerJoined
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-    # S_LoginSuccess
+    # S_PlayerJoined
     def PlayerInfo(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
@@ -35,33 +35,20 @@ class S_LoginSuccess(object):
             return obj
         return None
 
-    # S_LoginSuccess
-    def CommandId(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
-        return 0
-
-def S_LoginSuccessStart(builder):
-    builder.StartObject(2)
+def S_PlayerJoinedStart(builder):
+    builder.StartObject(1)
 
 def Start(builder):
-    S_LoginSuccessStart(builder)
+    S_PlayerJoinedStart(builder)
 
-def S_LoginSuccessAddPlayerInfo(builder, playerInfo):
+def S_PlayerJoinedAddPlayerInfo(builder, playerInfo):
     builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(playerInfo), 0)
 
 def AddPlayerInfo(builder, playerInfo):
-    S_LoginSuccessAddPlayerInfo(builder, playerInfo)
+    S_PlayerJoinedAddPlayerInfo(builder, playerInfo)
 
-def S_LoginSuccessAddCommandId(builder, commandId):
-    builder.PrependInt64Slot(1, commandId, 0)
-
-def AddCommandId(builder, commandId):
-    S_LoginSuccessAddCommandId(builder, commandId)
-
-def S_LoginSuccessEnd(builder):
+def S_PlayerJoinedEnd(builder):
     return builder.EndObject()
 
 def End(builder):
-    return S_LoginSuccessEnd(builder)
+    return S_PlayerJoinedEnd(builder)

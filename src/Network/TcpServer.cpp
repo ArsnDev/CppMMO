@@ -121,6 +121,16 @@ namespace CppMMO
                     ip::tcp::socket socket(m_ioContext);
                     co_await m_acceptor.async_accept(socket, asio::use_awaitable);
                     
+                    // Check connection limit to prevent server overload
+                    static constexpr size_t MAX_CONCURRENT_CONNECTIONS = 600;
+                    if (m_sessionManager && m_sessionManager->GetActiveSessionCount() >= MAX_CONCURRENT_CONNECTIONS)
+                    {
+                        LOG_WARN("Connection limit reached ({}). Rejecting new connection from {}", 
+                                MAX_CONCURRENT_CONNECTIONS, socket.remote_endpoint().address().to_string());
+                        socket.close();
+                        continue;
+                    }
+                    
                     // Configure socket options for better connection handling
                     boost::asio::socket_base::linger linger_option(false, 0);
                     socket.set_option(linger_option);

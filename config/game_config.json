@@ -4,13 +4,21 @@
         "height": 200.0
     },
     "gameplay": {
-        "chat_range": 50.0,
-        "aoi_range": 100.0,
+        "chat_range": 25.0,
+        "aoi_range": 30.0,
         "move_speed": 5.0,
-        "tick_rate": 60
+        "tick_rate": 30
     },
     "network": {
         "snapshot_rate": 60,
-        "reconnect_timeout_minutes": 5
+        "reconnect_timeout_minutes": 5,
+        "max_concurrent_connections": 600,
+        "input_rate_limit_ms": 33
+    },
+    "performance": {
+        "memory_pool_size": 1024,
+        "vector_pool_size": 256,
+        "job_queue_capacity": 1024,
+        "command_batch_size": 100
     }
 }

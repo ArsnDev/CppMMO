@@ -48,6 +48,9 @@ namespace CppMMO
                 float m_moveSpeed = 5.0f;
                 float m_mapWidth = 200.0f;
                 float m_mapHeight = 200.0f;
+                
+                // Performance settings
+                int m_commandBatchSize = 100;
 
                 // Tick-based batching system
                 std::unordered_map<uint64_t, std::vector<std::vector<std::byte>>> m_playerBatches;

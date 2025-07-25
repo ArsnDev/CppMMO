@@ -51,7 +51,7 @@ namespace CppMMO{
                         // 3. Create an async logger using the thread pool
                         std::vector<spdlog::sink_ptr> sinks {console_sink, daily_file_sink};
                         s_logger = std::make_shared<spdlog::async_logger>("CppMMO_Logger", sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
-                        s_logger->set_level(spdlog::level::debug);
+                        s_logger->set_level(spdlog::level::warn);
                         
                         // 4. Register the logger and set it as the default
                         spdlog::register_logger(s_logger);

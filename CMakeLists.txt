@@ -48,6 +48,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Utils/JobProcessor.cpp
     src/Utils/JobQueue.cpp
     src/Utils/Logger.cpp
+    src/Utils/MemoryPool.cpp
 )
 
 # 헤더 디렉토리 설정

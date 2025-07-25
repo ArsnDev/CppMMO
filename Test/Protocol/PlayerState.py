@@ -6,40 +6,44 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
-class PlayerInfo(object):
+class PlayerState(object):
     __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = PlayerInfo()
+        x = PlayerState()
         x.Init(buf, n + offset)
         return x
 
     @classmethod
-    def GetRootAsPlayerInfo(cls, buf, offset=0):
+    def GetRootAsPlayerState(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-    # PlayerInfo
+    # PlayerState
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-    # PlayerInfo
+    # PlayerState
     def PlayerId(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-    # PlayerInfo
-    def Name(self):
+    # PlayerState
+    def Position(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.String(o + self._tab.Pos)
+            x = self._tab.Indirect(o + self._tab.Pos)
+            from .Vec3 import Vec3
+            obj = Vec3()
+            obj.Init(self._tab.Bytes, x)
+            return obj
         return None
 
-    # PlayerInfo
-    def Position(self):
+    # PlayerState
+    def Velocity(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
@@ -49,84 +53,84 @@ class PlayerInfo(object):
             return obj
         return None
 
-    # PlayerInfo
-    def Hp(self):
+    # PlayerState
+    def Rotation(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
-        return 0
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+        return 0.0
 
-    # PlayerInfo
-    def MaxHp(self):
+    # PlayerState
+    def Hp(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
-    # PlayerInfo
+    # PlayerState
     def Mp(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
-    # PlayerInfo
-    def MaxMp(self):
+    # PlayerState
+    def LastInputSequence(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
+            return self._tab.Get(flatbuffers.number_types.Uint32Flags, o + self._tab.Pos)
         return 0
 
-def PlayerInfoStart(builder):
+def PlayerStateStart(builder):
     builder.StartObject(7)
 
 def Start(builder):
-    PlayerInfoStart(builder)
+    PlayerStateStart(builder)
 
-def PlayerInfoAddPlayerId(builder, playerId):
+def PlayerStateAddPlayerId(builder, playerId):
     builder.PrependUint64Slot(0, playerId, 0)
 
 def AddPlayerId(builder, playerId):
-    PlayerInfoAddPlayerId(builder, playerId)
+    PlayerStateAddPlayerId(builder, playerId)
 
-def PlayerInfoAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-
-def AddName(builder, name):
-    PlayerInfoAddName(builder, name)
-
-def PlayerInfoAddPosition(builder, position):
-    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(position), 0)
+def PlayerStateAddPosition(builder, position):
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(position), 0)
 
 def AddPosition(builder, position):
-    PlayerInfoAddPosition(builder, position)
+    PlayerStateAddPosition(builder, position)
 
-def PlayerInfoAddHp(builder, hp):
-    builder.PrependInt32Slot(3, hp, 0)
+def PlayerStateAddVelocity(builder, velocity):
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(velocity), 0)
+
+def AddVelocity(builder, velocity):
+    PlayerStateAddVelocity(builder, velocity)
+
+def PlayerStateAddRotation(builder, rotation):
+    builder.PrependFloat32Slot(3, rotation, 0.0)
+
+def AddRotation(builder, rotation):
+    PlayerStateAddRotation(builder, rotation)
+
+def PlayerStateAddHp(builder, hp):
+    builder.PrependInt32Slot(4, hp, 0)
 
 def AddHp(builder, hp):
-    PlayerInfoAddHp(builder, hp)
+    PlayerStateAddHp(builder, hp)
 
-def PlayerInfoAddMaxHp(builder, maxHp):
-    builder.PrependInt32Slot(4, maxHp, 0)
-
-def AddMaxHp(builder, maxHp):
-    PlayerInfoAddMaxHp(builder, maxHp)
-
-def PlayerInfoAddMp(builder, mp):
+def PlayerStateAddMp(builder, mp):
     builder.PrependInt32Slot(5, mp, 0)
 
 def AddMp(builder, mp):
-    PlayerInfoAddMp(builder, mp)
+    PlayerStateAddMp(builder, mp)
 
-def PlayerInfoAddMaxMp(builder, maxMp):
-    builder.PrependInt32Slot(6, maxMp, 0)
+def PlayerStateAddLastInputSequence(builder, lastInputSequence):
+    builder.PrependUint32Slot(6, lastInputSequence, 0)
 
-def AddMaxMp(builder, maxMp):
-    PlayerInfoAddMaxMp(builder, maxMp)
+def AddLastInputSequence(builder, lastInputSequence):
+    PlayerStateAddLastInputSequence(builder, lastInputSequence)
 
-def PlayerInfoEnd(builder):
+def PlayerStateEnd(builder):
     return builder.EndObject()
 
 def End(builder):
-    return PlayerInfoEnd(builder)
+    return PlayerStateEnd(builder)

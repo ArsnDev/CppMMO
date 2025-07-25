@@ -17,6 +17,7 @@ namespace CppMMO
             virtual void RemoveSession(uint64_t sessionId) = 0;
             virtual std::shared_ptr<ISession> GetSession(uint64_t sessionId) const = 0;
             virtual std::vector<std::shared_ptr<ISession>> GetAllSessions() const = 0;
+            virtual size_t GetActiveSessionCount() const = 0;
         };
     }
 }

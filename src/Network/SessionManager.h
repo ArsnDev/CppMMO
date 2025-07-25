@@ -36,6 +36,7 @@ namespace CppMMO
             virtual void RemoveSession(uint64_t sessionId) override;
             virtual std::shared_ptr<ISession> GetSession(uint64_t sessionId) const override;
             virtual std::vector<std::shared_ptr<ISession>> GetAllSessions() const override;
+            virtual size_t GetActiveSessionCount() const override;
             
             void OnSessionDisconnected(std::shared_ptr<ISession> session);
         private:
