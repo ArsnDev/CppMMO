@@ -1,6 +1,6 @@
 # CppMMO: C++ MMORPG Server
 
-![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
+![C++20](https://img.shields.io/badge/C%2B%2B-20-blue)
 ![CMake](https://img.shields.io/badge/CMake-3.15+-green)
 ![Docker](https://img.shields.io/badge/Docker-Enabled-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
@@ -8,7 +8,7 @@
 
 **Server Authority 기반 실시간 멀티플레이어 MMO 서버**
 
-C++17, Boost.Asio, FlatBuffers를 기반으로 제작된 MMORPG 서버입니다. 성능 최적화를 통해 600명 동시 접속을 안정적으로 지원합니다.
+C++20, Boost.Asio, FlatBuffers를 기반으로 제작된 MMORPG 서버입니다. 성능 최적화를 통해 600명 동시 접속을 안정적으로 지원합니다.
 
 ## 🎉 **주요 기능**
 
