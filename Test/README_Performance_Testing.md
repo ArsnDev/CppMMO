@@ -4,12 +4,12 @@ CppMMO 서버의 성능을 체계적으로 측정하고 분석하는 도구 모�
 
 ## 📋 목차
 
-1. [개요](#개요)
-2. [설치 및 준비](#설치-및-준비)
-3. [기본 사용법](#기본-사용법)
-4. [고급 사용법](#고급-사용법)
-5. [결과 분석](#결과-분석)
-6. [문제 해결](#문제-해결)
+1. [개요](#-개요)
+2. [설치 및 준비](#️-설치-및-준비)
+3. [기본 사용법](#-기본-사용법)
+4. [고급 사용법](#-고급-사용법)
+5. [결과 분석](#-결과-분석)
+6. [문제 해결](#-문제-해결)
 
 ## 🎯 개요
 
@@ -195,9 +195,15 @@ python run_scalability_tests.py --clients 80 100 120 150 180 200
 
 #### 1. "Could not import FlatBuffers modules" 오류
 ```bash
-# FlatBuffers 프로토콜 파일 재생성
-cd "C:\Users\clums\Desktop\Study\Cpp"
-./flatc --csharp --gen-object-api -o CppMMO/Test/Protocol CppMMO/src/Common/protocol.fbs
+# FlatBuffers 프로토콜 파일 재생성 (프로젝트 루트에서 실행)
+cd <프로젝트_루트_경로>
+# Python 테스트용 프로토콜 파일 생성
+flatc --python --gen-object-api -o Test/Protocol src/Common/protocol.fbs
+
+# 또는 환경 변수 사용
+# export CPPMMO_ROOT=/path/to/project
+# cd $CPPMMO_ROOT
+# flatc --python --gen-object-api -o Test/Protocol src/Common/protocol.fbs
 ```
 
 #### 2. "서버에 연결할 수 없습니다" 오류
