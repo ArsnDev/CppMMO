@@ -127,22 +127,15 @@ namespace CppMMO
              */
             Vec3 GameManager::GetSpawnPosition() const
             {
-                // Fixed spawn position (map center)
-                float centerX = m_mapWidth * 0.5f;   // 100.0f (200*0.5)
-                float centerY = m_mapHeight * 0.5f;  // 100.0f (200*0.5)
-                
-                // All players spawn at the same location
-                return Vec3(centerX, centerY, 0.0f);
-                
-                // Original random spawn code (commented out)
-                /*
+                // Distributed spawn positions for better performance
                 static std::random_device rd;
                 static std::mt19937 gen(rd());
-                float spawnRange = std::min(m_mapWidth, m_mapHeight) * 0.1f;
-                std::uniform_real_distribution<float> disX(centerX - spawnRange, centerX + spawnRange);
-                std::uniform_real_distribution<float> disY(centerY - spawnRange, centerY + spawnRange);
+                
+                // Spawn players across the entire map to reduce AOI overlaps
+                std::uniform_real_distribution<float> disX(20.0f, m_mapWidth - 20.0f);   // 20 ~ 180
+                std::uniform_real_distribution<float> disY(20.0f, m_mapHeight - 20.0f);  // 20 ~ 180
+                
                 return Vec3(disX(gen), disY(gen), 0.0f);
-                */
             }
 
             /**
@@ -179,10 +172,30 @@ namespace CppMMO
                         {
                             float deltaSeconds = deltaTime.count() / 1000.0f;
                             
+                            auto commandStart = std::chrono::high_resolution_clock::now();
                             ProcessPendingCommands();
+                            auto worldStart = std::chrono::high_resolution_clock::now();
                             UpdateWorld(deltaSeconds);
+                            auto snapshotStart = std::chrono::high_resolution_clock::now();
                             SendWorldSnapshots();
+                            auto flushStart = std::chrono::high_resolution_clock::now();
                             FlushAllBatches();
+                            auto tickEnd = std::chrono::high_resolution_clock::now();
+                            
+                            // Update performance stats
+                            m_performanceStats.totalCommandProcessingTime += 
+                                std::chrono::duration_cast<std::chrono::microseconds>(worldStart - commandStart);
+                            m_performanceStats.totalWorldUpdateTime += 
+                                std::chrono::duration_cast<std::chrono::microseconds>(snapshotStart - worldStart);
+                            m_performanceStats.totalSnapshotTime += 
+                                std::chrono::duration_cast<std::chrono::microseconds>(flushStart - snapshotStart);
+                            
+                            // Report stats periodically
+                            if (m_tickNumber - m_lastStatsReportTick >= STATS_REPORT_INTERVAL)
+                            {
+                                ReportPerformanceStats();
+                                m_lastStatsReportTick = m_tickNumber;
+                            }
                             
                             lastTickTime = currentTime;
                         }
@@ -206,9 +219,20 @@ namespace CppMMO
                 std::vector<GameCommand> commandBatch;
                 commandBatch.reserve(m_commandBatchSize);
                 
+                // Start timing for optimization
+                auto startTime = std::chrono::high_resolution_clock::now();
+                auto maxDuration = std::chrono::milliseconds(m_maxProcessingTimeMs);
+                
                 // Collect commands in batches for efficient processing
                 while (commandBatch.size() < static_cast<size_t>(m_commandBatchSize))
                 {
+                    // Check time limit to maintain stable tick rate
+                    auto currentTime = std::chrono::high_resolution_clock::now();
+                    if (currentTime - startTime >= maxDuration)
+                    {
+                        break; // Stop collecting if time limit exceeded
+                    }
+                    
                     auto optCommand = m_gameLogicQueue->TryPopGameCommand();
                     if (!optCommand.has_value())
                     {
@@ -238,7 +262,10 @@ namespace CppMMO
                 
                 if (!commandBatch.empty())
                 {
-                    LOG_DEBUG("Processed batch of {} commands", commandBatch.size());
+                    auto endTime = std::chrono::high_resolution_clock::now();
+                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
+                    m_performanceStats.totalCommandsProcessed += commandBatch.size();
+                    LOG_DEBUG("Processed batch of {} commands in {}μs", commandBatch.size(), duration.count());
                 }
             }
 
@@ -283,7 +310,8 @@ namespace CppMMO
                 {
                     if (player.IsActive())
                     {
-                        auto visiblePlayers = GetPlayersInAOI(player.GetPosition());
+                        // Use cached AOI for better performance
+                        auto visiblePlayers = GetCachedPlayersInAOI(playerId, player.GetPosition());
                         // 월드 스냅샷을 배치에 추가 (즉시 전송하지 않음)
                         AddSnapshotToPlayerBatch(playerId, visiblePlayers, currentServerTime);
                     }
@@ -745,6 +773,102 @@ namespace CppMMO
                 if (totalBatches > 0) {
                     LOG_DEBUG("Flushed {} batches containing {} total packets", totalBatches, totalPackets);
                 }
+            }
+
+            /**
+             * @brief Gets cached AOI players for a given player, updating cache when necessary.
+             */
+            std::vector<uint64_t> GameManager::GetCachedPlayersInAOI(uint64_t playerId, const Vec3& position)
+            {
+                if (ShouldUpdateAOI(playerId, position))
+                {
+                    auto visiblePlayers = GetPlayersInAOI(position);
+                    UpdateAOICache(playerId, position, visiblePlayers);
+                    m_performanceStats.totalAOIQueriesExecuted++;
+                    return visiblePlayers;
+                }
+                else
+                {
+                    auto it = m_aoiCache.find(playerId);
+                    if (it != m_aoiCache.end())
+                    {
+                        m_performanceStats.totalAOIQueriesSkipped++;
+                        return it->second.visiblePlayers;
+                    }
+                    else
+                    {
+                        auto visiblePlayers = GetPlayersInAOI(position);
+                        UpdateAOICache(playerId, position, visiblePlayers);
+                        m_performanceStats.totalAOIQueriesExecuted++;
+                        return visiblePlayers;
+                    }
+                }
+            }
+
+            /**
+             * @brief Determines if AOI should be updated for a player.
+             */
+            bool GameManager::ShouldUpdateAOI(uint64_t playerId, const Vec3& currentPosition) const
+            {
+                auto it = m_aoiCache.find(playerId);
+                if (it == m_aoiCache.end())
+                {
+                    return true;
+                }
+
+                const auto& cache = it->second;
+                
+                if (m_tickNumber - cache.lastUpdateTick >= static_cast<uint64_t>(m_aoiUpdateInterval))
+                {
+                    return true;
+                }
+
+                Vec3 positionDelta = currentPosition - cache.lastPosition;
+                float distanceMoved = sqrt(positionDelta.x * positionDelta.x + positionDelta.y * positionDelta.y);
+                if (distanceMoved >= m_aoiPositionThreshold)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            /**
+             * @brief Updates the AOI cache for a player.
+             */
+            void GameManager::UpdateAOICache(uint64_t playerId, const Vec3& position, const std::vector<uint64_t>& visiblePlayers)
+            {
+                AOICache& cache = m_aoiCache[playerId];
+                cache.visiblePlayers = visiblePlayers;
+                cache.lastUpdateTick = m_tickNumber;
+                cache.lastPosition = position;
+            }
+
+            /**
+             * @brief Reports performance statistics.
+             */
+            void GameManager::ReportPerformanceStats()
+            {
+                uint64_t interval = STATS_REPORT_INTERVAL;
+                uint64_t avgCommandProcessingUs = m_performanceStats.totalCommandProcessingTime.count() / interval;
+                uint64_t avgWorldUpdateUs = m_performanceStats.totalWorldUpdateTime.count() / interval;
+                uint64_t avgSnapshotUs = m_performanceStats.totalSnapshotTime.count() / interval;
+                
+                float aoiCacheHitRate = 0.0f;
+                uint64_t totalAOIQueries = m_performanceStats.totalAOIQueriesSkipped + m_performanceStats.totalAOIQueriesExecuted;
+                if (totalAOIQueries > 0) {
+                    aoiCacheHitRate = (float)m_performanceStats.totalAOIQueriesSkipped / totalAOIQueries * 100.0f;
+                }
+                
+                LOG_INFO("Performance Stats ({}s interval):", interval / 60);
+                LOG_INFO("  Commands/sec: {}", m_performanceStats.totalCommandsProcessed * 60 / interval);
+                LOG_INFO("  Avg times - Command: {}μs, World: {}μs, Snapshot: {}μs", 
+                        avgCommandProcessingUs, avgWorldUpdateUs, avgSnapshotUs);
+                LOG_INFO("  AOI Cache - Hit Rate: {:.1f}%, Skipped: {}, Executed: {}", 
+                        aoiCacheHitRate, m_performanceStats.totalAOIQueriesSkipped, m_performanceStats.totalAOIQueriesExecuted);
+                
+                // Reset stats for next interval
+                m_performanceStats = PerformanceStats{};
             }
         }
     }

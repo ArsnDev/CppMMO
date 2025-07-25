@@ -40,8 +40,8 @@ namespace CppMMO
                 std::atomic<bool> m_running = false;
                 uint64_t m_tickNumber = 0;
 
-                int m_tickRate = 60;
-                std::chrono::milliseconds m_tickDuration{1000 / 60};
+                int m_tickRate = 30;  // 60 → 30 TPS for better performance
+                std::chrono::milliseconds m_tickDuration{1000 / 30};
 
                 float m_aoiRange = 100.0f;
                 float m_chatRange = 50.0f;
@@ -50,10 +50,34 @@ namespace CppMMO
                 float m_mapHeight = 200.0f;
                 
                 // Performance settings
-                int m_commandBatchSize = 100;
+                int m_commandBatchSize = 500;  // Optimized: 100 → 500
+                int m_maxProcessingTimeMs = 10; // Time limit for command processing
+                int m_aoiUpdateInterval = 3;    // Update AOI every 3 ticks instead of every tick
+                float m_aoiPositionThreshold = 10.0f; // Force AOI update if player moved > 10 units
 
                 // Tick-based batching system
                 std::unordered_map<uint64_t, std::vector<std::vector<std::byte>>> m_playerBatches;
+                
+                // AOI caching system for performance optimization
+                struct AOICache {
+                    std::vector<uint64_t> visiblePlayers;
+                    uint64_t lastUpdateTick = 0;
+                    Vec3 lastPosition{0, 0, 0};
+                };
+                std::unordered_map<uint64_t, AOICache> m_aoiCache;
+                
+                // Performance monitoring
+                struct PerformanceStats {
+                    uint64_t totalCommandsProcessed = 0;
+                    uint64_t totalAOIQueriesSkipped = 0;
+                    uint64_t totalAOIQueriesExecuted = 0;
+                    std::chrono::microseconds totalCommandProcessingTime{0};
+                    std::chrono::microseconds totalWorldUpdateTime{0};
+                    std::chrono::microseconds totalSnapshotTime{0};
+                };
+                PerformanceStats m_performanceStats;
+                uint64_t m_lastStatsReportTick = 0;
+                static constexpr uint64_t STATS_REPORT_INTERVAL = 300; // Report every 5 seconds at 60 TPS
 
                 void GameLoop();
                 void ProcessPendingCommands();
@@ -71,6 +95,10 @@ namespace CppMMO
                 void HandlePlayerDisconnect(const PlayerDisconnectCommandData& data, std::shared_ptr<Network::ISession> session);
            
                 std::vector<uint64_t> GetPlayersInAOI(const Vec3& position);
+                std::vector<uint64_t> GetCachedPlayersInAOI(uint64_t playerId, const Vec3& position);
+                bool ShouldUpdateAOI(uint64_t playerId, const Vec3& currentPosition) const;
+                void UpdateAOICache(uint64_t playerId, const Vec3& position, const std::vector<uint64_t>& visiblePlayers);
+                void ReportPerformanceStats();
                 void SendEnterZoneResponse(uint64_t playerId, std::shared_ptr<Network::ISession> session);
                 void BroadcastPlayerJoined(uint64_t playerId);
                 void BroadcastPlayerLeft(uint64_t playerId);
