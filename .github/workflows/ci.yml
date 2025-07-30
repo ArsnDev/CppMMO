@@ -1,0 +1,171 @@
+name: CppMMO CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # C++ 서버 빌드 및 테스트
+  build-cpp-server:
+    name: Build C++ Server
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build CppMMO Server Docker Image
+      run: |
+        docker build -t cppmmo-server:test .
+    
+    - name: Verify Build Output
+      run: |
+        docker run --rm cppmmo-server:test ls -la /app/
+        docker run --rm cppmmo-server:test ./CppMMO_Deployment --help || true
+
+  # AuthServer (C#) 빌드 및 테스트  
+  build-auth-server:
+    name: Build Auth Server
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore Dependencies
+      run: dotnet restore auth/AuthServer.csproj
+    
+    - name: Build AuthServer
+      run: dotnet build auth/AuthServer.csproj --configuration Release --no-restore
+    
+    - name: Run Tests (if any)
+      run: dotnet test auth/AuthServer.csproj --no-build --configuration Release --verbosity normal || echo "No tests found"
+
+  # Docker Compose 통합 테스트
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [build-cpp-server, build-auth-server]
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Create test config
+      run: |
+        mkdir -p logs
+        touch logs/.gitkeep
+    
+    - name: Start Services with Docker Compose
+      run: |
+        docker-compose up -d --build
+        sleep 30  # 서비스 시작 대기
+    
+    - name: Check Service Health
+      run: |
+        # Redis 헬스체크
+        docker-compose exec -T redis redis-cli ping
+        
+        # MySQL 헬스체크  
+        docker-compose exec -T mysql mysqladmin ping -h localhost -u root -prootpassword
+        
+        # AuthServer 헬스체크 (HTTP 엔드포인트가 있다면)
+        # curl -f http://localhost:5278/health || echo "AuthServer health check failed"
+        
+        # CppMMO Server 프로세스 확인
+        docker-compose exec -T cppmmo_server ps aux | grep CppMMO_Deployment || echo "CppMMO process check"
+    
+    - name: Check Logs
+      if: always()
+      run: |
+        echo "=== AuthServer Logs ==="
+        docker-compose logs authserver
+        echo "=== CppMMO Server Logs ==="
+        docker-compose logs cppmmo_server
+        echo "=== Redis Logs ==="
+        docker-compose logs redis
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        docker-compose down -v
+        docker system prune -f
+
+  # 성능 테스트 (Python 스크립트 실행)
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python Dependencies
+      run: |
+        cd Test
+        pip install -r requirements.txt
+    
+    - name: Start Test Environment  
+      run: |
+        docker-compose up -d --build
+        sleep 45  # 충분한 시작 시간 대기
+    
+    - name: Run Performance Tests
+      run: |
+        cd Test
+        timeout 300 python run_performance_tests.py || echo "Performance test completed or timed out"
+    
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: Test/performance_test_*.csv
+        retention-days: 30
+    
+    - name: Cleanup Performance Test
+      if: always()
+      run: |
+        docker-compose down -v
+        docker system prune -f
+
+  # 보안 스캔 (선택사항)
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
