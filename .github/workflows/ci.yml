@@ -68,37 +68,37 @@ jobs:
     
     - name: Start Services with Docker Compose
       run: |
-        docker-compose up -d --build
+        docker compose up -d --build
         sleep 30  # 서비스 시작 대기
     
     - name: Check Service Health
       run: |
         # Redis 헬스체크
-        docker-compose exec -T redis redis-cli ping
+        docker compose exec -T redis redis-cli ping
         
         # MySQL 헬스체크  
-        docker-compose exec -T mysql mysqladmin ping -h localhost -u root -prootpassword
+        docker compose exec -T mysql mysqladmin ping -h localhost -u root -prootpassword
         
         # AuthServer 헬스체크 (HTTP 엔드포인트가 있다면)
         # curl -f http://localhost:5278/health || echo "AuthServer health check failed"
         
         # CppMMO Server 프로세스 확인
-        docker-compose exec -T cppmmo_server ps aux | grep CppMMO_Deployment || echo "CppMMO process check"
+        docker compose exec -T cppmmo_server ps aux | grep CppMMO_Deployment || echo "CppMMO process check"
     
     - name: Check Logs
       if: always()
       run: |
         echo "=== AuthServer Logs ==="
-        docker-compose logs authserver
+        docker compose logs authserver
         echo "=== CppMMO Server Logs ==="
-        docker-compose logs cppmmo_server
+        docker compose logs cppmmo_server
         echo "=== Redis Logs ==="
-        docker-compose logs redis
+        docker compose logs redis
     
     - name: Cleanup
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
         docker system prune -f
 
   # 성능 테스트 (Python 스크립트 실행)
@@ -124,7 +124,7 @@ jobs:
     
     - name: Start Test Environment  
       run: |
-        docker-compose up -d --build
+        docker compose up -d --build
         sleep 45  # 충분한 시작 시간 대기
     
     - name: Run Performance Tests
@@ -143,7 +143,7 @@ jobs:
     - name: Cleanup Performance Test
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
         docker system prune -f
 
   # 보안 스캔 (선택사항)
